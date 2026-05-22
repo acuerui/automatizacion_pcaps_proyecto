@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PCAP automation</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">PA</div>
+      <nav class="nav">
+        <button class="nav-item active" data-view="dashboard" onclick="setView('dashboard')" title="Dashboard">D</button>
+        <button class="nav-item" data-view="captures" onclick="setView('captures')" title="Capturas">C</button>
+        <button class="nav-item" data-view="logs" onclick="setView('logs')" title="Logs">L</button>
+        <button class="nav-item" data-view="system" onclick="setView('system')" title="Sistema">S</button>
+      </nav>
+    </aside>
+
+    <div class="workspace">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">DS4MoveUS C-ITS</p>
+          <h1 id="page-title">Dashboard</h1>
+        </div>
+        <div class="search-box">
+          <input id="search" placeholder="Buscar captura..." oninput="renderCurrentView()">
+          <span>Ctrl K</span>
+        </div>
+        <div class="actions">
+          <button class="primary" onclick="post('/api/start')">Arrancar</button>
+          <button onclick="post('/api/stop')">Parar</button>
+          <button onclick="post('/api/scan')">Escanear</button>
+        </div>
+      </header>
+
+      <main>
+        <section id="dashboard-view" class="view active">
+          <div class="dashboard-grid">
+            <section class="panel hero-panel">
+              <div>
+                <p class="eyebrow">Estado del worker</p>
+                <h2 id="worker-title">Cargando...</h2>
+                <p id="worker-subtitle" class="muted"></p>
+              </div>
+              <div class="status-orbit">
+                <div id="donut" class="donut"><span id="donut-label">0%</span></div>
+              </div>
+            </section>
+
+            <section class="panel metrics-panel">
+              <div class="panel-title">Resumen</div>
+              <div id="summary" class="summary"></div>
+            </section>
+
+            <section class="panel chart-panel">
+              <div class="panel-title">Distribucion de estados</div>
+              <div id="status-chart" class="bar-chart"></div>
+            </section>
+
+            <section class="panel recent-panel">
+              <div class="panel-title">Ultimas capturas</div>
+              <div id="recent-jobs" class="recent-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="captures-view" class="view">
+          <div class="content-grid">
+            <section class="panel jobs-panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Pipeline</p>
+                  <h2>Capturas</h2>
+                </div>
+                <span class="muted" id="job-count"></span>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Dataset</th>
+                      <th>Estado</th>
+                      <th>Pipeline</th>
+                      <th>Actualizado</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="jobs"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <aside class="panel detail-panel">
+              <div class="panel-title">Detalle</div>
+              <div id="details" class="details muted">Selecciona una captura para ver rutas, hash y errores.</div>
+            </aside>
+          </div>
+        </section>
+
+        <section id="logs-view" class="view">
+          <section class="panel logs-panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Trazabilidad</p>
+                <h2>Logs</h2>
+              </div>
+              <span class="muted" id="selected-log">global</span>
+            </div>
+            <div id="logs" class="logs"></div>
+          </section>
+        </section>
+
+        <section id="system-view" class="view">
+          <div class="content-grid">
+            <section class="panel">
+              <div class="panel-title">Health checks</div>
+              <div id="health" class="health-grid"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-title">Configuracion activa</div>
+              <div id="runtime" class="runtime-grid"></div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <dialog id="credentials-dialog">
+    <form method="dialog" class="dialog-body" onsubmit="saveCredentials(event)">
+      <h2>Credenciales DS4MoveUS</h2>
+      <label>Usuario
+        <input id="api-user" autocomplete="username" required>
+      </label>
+      <label>Contrasena
+        <input id="api-password" type="password" autocomplete="current-password" required>
+      </label>
+      <div class="actions end">
+        <button class="primary" type="submit">Conectar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
