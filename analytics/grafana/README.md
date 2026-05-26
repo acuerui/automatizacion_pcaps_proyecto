@@ -16,10 +16,10 @@ Abrir:
 http://localhost:3000
 ```
 
-Usuario inicial habitual:
+Usuario inicial:
 
 ```text
-admin / admin
+credenciales definidas por la instalacion local de Grafana
 ```
 
 ## Datasource

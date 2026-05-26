@@ -124,8 +124,12 @@ class Pipeline:
     def _download(self, job: sqlite3.Row) -> None:
         dataset_id = str(job["dataset_id"])
         destination = self.cfg.raw_dir / str(job["filename"])
+        temp_destination = destination.with_name(f".{destination.name}.download")
+        if temp_destination.exists():
+            temp_destination.unlink()
         self.store.set_status(dataset_id, "downloading", f"Downloading to {destination}")
-        self.api.download_dataset(str(job["artifact_url"]), destination)
+        self.api.download_dataset(str(job["artifact_url"]), temp_destination)
+        temp_destination.replace(destination)
         self.store.set_status(
             dataset_id,
             "downloaded",

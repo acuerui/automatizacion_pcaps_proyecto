@@ -59,16 +59,16 @@ Archivos principales:
 Superset no almacena los datos V2X. Solo se conecta al PostgreSQL existente de la VPN:
 
 ```text
-Host: 10.210.0.62
-Port: 5432
-Database: V2X
-Schema: public
+Host: <v2x-postgres-host>
+Port: <v2x-postgres-port>
+Database: <v2x-postgres-db>
+Schema: <v2x-postgres-schema>
 ```
 
 La URI SQLAlchemy usada en Superset es:
 
 ```text
-postgresql+psycopg2://postgres:postgresql-password@10.210.0.62:5432/V2X
+postgresql+psycopg2://<user>:<password>@<host>:<port>/<database>
 ```
 
 ## Vistas analytics disponibles
@@ -108,7 +108,7 @@ http://localhost:8088
 Desde PowerShell:
 
 ```powershell
-cd "C:\Users\AlexCue\OneDrive - Cluster MLC ITS Euskadi\Escritorio\automatizacion_pcaps_proyecto\analytics\superset"
+cd analytics\superset
 copy .env.example .env
 docker compose up --build
 ```
@@ -119,16 +119,16 @@ Abrir:
 http://localhost:8088
 ```
 
-Credenciales locales por defecto:
+Credenciales locales iniciales:
 
 ```text
-admin / admin
+usuario y password definidos en analytics/superset/.env
 ```
 
 Comprobar acceso a PostgreSQL con VPN activa:
 
 ```powershell
-Test-NetConnection 10.210.0.62 -Port 5432
+Test-NetConnection <host> -Port <port>
 ```
 
 ## Siguiente trabajo

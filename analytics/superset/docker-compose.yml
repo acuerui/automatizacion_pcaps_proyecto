@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_DB: ${SUPERSET_METADATA_DB:-superset}
       POSTGRES_USER: ${SUPERSET_METADATA_USER:-superset}
-      POSTGRES_PASSWORD: ${SUPERSET_METADATA_PASSWORD:-superset}
+      POSTGRES_PASSWORD: ${SUPERSET_METADATA_PASSWORD:-change-me-local-metadata-password}
     volumes:
       - superset-db-data:/var/lib/postgresql/data
     healthcheck:
@@ -42,12 +42,12 @@ services:
       SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY:-change-me-for-local-only}
       SUPERSET_METADATA_DB: ${SUPERSET_METADATA_DB:-superset}
       SUPERSET_METADATA_USER: ${SUPERSET_METADATA_USER:-superset}
-      SUPERSET_METADATA_PASSWORD: ${SUPERSET_METADATA_PASSWORD:-superset}
+      SUPERSET_METADATA_PASSWORD: ${SUPERSET_METADATA_PASSWORD:-change-me-local-metadata-password}
       SUPERSET_ADMIN_USERNAME: ${SUPERSET_ADMIN_USERNAME:-admin}
       SUPERSET_ADMIN_FIRSTNAME: ${SUPERSET_ADMIN_FIRSTNAME:-CITS}
       SUPERSET_ADMIN_LASTNAME: ${SUPERSET_ADMIN_LASTNAME:-Admin}
       SUPERSET_ADMIN_EMAIL: ${SUPERSET_ADMIN_EMAIL:-admin@example.com}
-      SUPERSET_ADMIN_PASSWORD: ${SUPERSET_ADMIN_PASSWORD:-admin}
+      SUPERSET_ADMIN_PASSWORD: ${SUPERSET_ADMIN_PASSWORD:-change-me-local-admin-password}
     volumes:
       - ./superset_config.py:/app/pythonpath/superset_config.py:ro
     command: >
@@ -74,7 +74,7 @@ services:
       SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY:-change-me-for-local-only}
       SUPERSET_METADATA_DB: ${SUPERSET_METADATA_DB:-superset}
       SUPERSET_METADATA_USER: ${SUPERSET_METADATA_USER:-superset}
-      SUPERSET_METADATA_PASSWORD: ${SUPERSET_METADATA_PASSWORD:-superset}
+      SUPERSET_METADATA_PASSWORD: ${SUPERSET_METADATA_PASSWORD:-change-me-local-metadata-password}
     ports:
       - "${SUPERSET_PORT:-8088}:8088"
     volumes:

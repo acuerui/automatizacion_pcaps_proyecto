@@ -6,7 +6,7 @@ SECRET_KEY = os.environ.get("SUPERSET_SECRET_KEY", "change-me-for-local-only")
 SQLALCHEMY_DATABASE_URI = (
     "postgresql+psycopg2://"
     f"{os.environ.get('SUPERSET_METADATA_USER', 'superset')}:"
-    f"{os.environ.get('SUPERSET_METADATA_PASSWORD', 'superset')}"
+    f"{os.environ.get('SUPERSET_METADATA_PASSWORD', 'change-me-local-metadata-password')}"
     "@superset-db:5432/"
     f"{os.environ.get('SUPERSET_METADATA_DB', 'superset')}"
 )

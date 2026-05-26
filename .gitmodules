@@ -1,0 +1,9 @@
+[submodule "pcap2db"]
+	path = pcap2db
+	url = https://github.com/acuerui/pcap2db.git
+	branch = main
+
+[submodule "ndjson2pg"]
+	path = ndjson2pg
+	url = https://github.com/acuerui/ndjson2pg.git
+	branch = main

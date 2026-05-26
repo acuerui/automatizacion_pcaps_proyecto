@@ -31,9 +31,16 @@ No guardes credenciales reales dentro del JSON.
 
 - Python.
 - `tshark` instalado y disponible en PATH, o configurar `tshark_path`.
+- Submodulos `pcap2db` y `ndjson2pg` inicializados.
 - Dependencias de `pcap2db`.
 - Dependencias de `ndjson2pg`.
 - Variables `.env` de PostgreSQL dentro de `ndjson2pg` si `ingest_to_postgres` esta en `true`.
+
+Si has clonado el repo sin submodulos:
+
+```powershell
+git submodule update --init --recursive
+```
 
 ## 3. Arranque
 

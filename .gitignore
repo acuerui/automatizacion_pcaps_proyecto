@@ -1,0 +1,58 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.local.json
+config.local.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Packaging and build artifacts
+build/
+dist/
+*.egg-info/
+
+# Logs and runtime state
+*.log
+*.sqlite
+*.sqlite3
+*.db
+
+# PCAP and pipeline generated data
+*.pcap
+*.pcapng
+*.ndjson
+*.jsonl
+pcap_workspace/
+workspace/
+pcaps/raw/
+pcaps/processed/
+out/
+
+# Docker/local service state
+docker-data/
+postgres-data/
+redis-data/
+superset_home/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

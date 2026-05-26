@@ -20,13 +20,13 @@ Abrir:
 http://localhost:8088
 ```
 
-Credenciales por defecto:
+Credenciales iniciales:
 
 ```text
-admin / admin
+usuario y password definidos en `.env`
 ```
 
-Puedes cambiarlas en `.env` antes del primer arranque.
+Cambialas antes del primer arranque. No reutilices esas credenciales fuera de pruebas locales.
 
 ## Conectar PostgreSQL V2X
 
@@ -39,7 +39,7 @@ Settings > Database Connections > + Database
 Usar SQLAlchemy URI:
 
 ```text
-postgresql+psycopg2://postgres:postgresql-password@10.210.0.62:5432/V2X
+postgresql+psycopg2://<user>:<password>@<host>:<port>/<database>
 ```
 
 En `Advanced > Other > Schemas allowed for CSV upload`, no hace falta tocar nada para esta prueba.
@@ -47,8 +47,8 @@ En `Advanced > Other > Schemas allowed for CSV upload`, no hace falta tocar nada
 Si el test de conexion falla:
 
 - comprobar que la VPN esta conectada;
-- comprobar que Docker Desktop puede alcanzar `10.210.0.62`;
-- probar desde Windows: `Test-NetConnection 10.210.0.62 -Port 5432`;
+- comprobar que Docker Desktop puede alcanzar el host PostgreSQL V2X;
+- probar desde Windows: `Test-NetConnection <host> -Port <port>`;
 - revisar usuario/password en `ndjson2pg/.env`.
 
 ## Datasets
