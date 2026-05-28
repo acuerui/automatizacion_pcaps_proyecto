@@ -68,6 +68,7 @@ def run_logged_command(
 ) -> None:
     env = os.environ.copy()
     if extra_pythonpath:
+        extra_pythonpath = extra_pythonpath.resolve()
         current = env.get("PYTHONPATH")
         env["PYTHONPATH"] = str(extra_pythonpath) if not current else f"{extra_pythonpath}{os.pathsep}{current}"
     store.add_log(dataset_id, "INFO", "Command: " + " ".join(command))
@@ -87,4 +88,3 @@ def run_logged_command(
     return_code = process.wait()
     if return_code != 0:
         raise RuntimeError(f"Command failed with exit code {return_code}: {' '.join(command)}")
-

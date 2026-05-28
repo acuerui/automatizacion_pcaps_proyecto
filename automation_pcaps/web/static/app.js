@@ -55,7 +55,7 @@ function renderCurrentView() {
 }
 
 function renderShell() {
-  const workerTitle = statusCache.worker_enabled ? "Worker activo" : "Worker parado";
+  const workerTitle = statusCache.worker_enabled ? "Procesando pendientes" : "Modo manual";
   const subtitle = `Credenciales ${statusCache.has_credentials ? "ok" : "pendientes"} - workspace ${statusCache.workspace_dir || "-"} - postgres ${statusCache.ingest_to_postgres ? "on" : "off"}`;
   document.getElementById("worker-title").textContent = workerTitle;
   document.getElementById("worker-subtitle").textContent = subtitle;
@@ -200,10 +200,19 @@ function pipelineSteps(job) {
 }
 
 function actionsFor(job) {
-  if (job.status !== "failed") return "";
+  if (RUNNING.includes(job.status) || job.status === "loaded") return "";
+  if (job.status === "failed") {
+    return `
+      <button onclick="event.stopPropagation(); post('/api/retry',{dataset_id:'${escapeAttr(job.dataset_id)}'})">Retry</button>
+      ${job.session_dir ? `<button onclick="event.stopPropagation(); post('/api/retry-postgres',{dataset_id:'${escapeAttr(job.dataset_id)}'})">Solo PG</button>` : ""}`;
+  }
+  const label = {
+    detected: "Descargar",
+    downloaded: "Continuar",
+    transformed: "Cargar PG"
+  }[job.status] || "Procesar";
   return `
-    <button onclick="event.stopPropagation(); post('/api/retry',{dataset_id:'${escapeAttr(job.dataset_id)}'})">Retry</button>
-    ${job.session_dir ? `<button onclick="event.stopPropagation(); post('/api/retry-postgres',{dataset_id:'${escapeAttr(job.dataset_id)}'})">Solo PG</button>` : ""}`;
+    <button onclick="event.stopPropagation(); post('/api/process',{dataset_id:'${escapeAttr(job.dataset_id)}'})">${label}</button>`;
 }
 
 function selectJob(datasetId) {

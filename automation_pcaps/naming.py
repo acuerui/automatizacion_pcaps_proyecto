@@ -112,7 +112,7 @@ def infer_vendor_from_text(text: str) -> str:
     if "swarco" in text:
         return "swarco"
     if "lacroix" in text:
-        return "cohda"
+        return "swarco"
     return "cohda"
 
 
@@ -144,4 +144,3 @@ def infer_vendor_from_capture_name(filename: str) -> str:
     if len(parts) < 2:
         raise RuntimeError(f"Cannot infer vendor from capture filename: {filename}")
     return parts[1].lower()
-

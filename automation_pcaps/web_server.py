@@ -49,8 +49,7 @@ class WebHandler(BaseHTTPRequestHandler):
             self.server.pipeline.stop()
             self._json({"ok": True})
         elif parsed.path == "/api/scan":
-            self.server.pipeline.start()
-            self.server.pipeline.wake_once()
+            self.server.pipeline.scan_async()
             self._json({"ok": True})
         elif parsed.path == "/api/credentials":
             body = self._body()
@@ -60,20 +59,21 @@ class WebHandler(BaseHTTPRequestHandler):
                 self.send_error(HTTPStatus.BAD_REQUEST, "Missing user or password")
                 return
             self.server.pipeline.set_credentials(user, password)
-            self.server.pipeline.start()
-            self.server.pipeline.wake_once()
+            self.server.pipeline.scan_async()
+            self._json({"ok": True})
+        elif parsed.path == "/api/process":
+            dataset_id = self._body()["dataset_id"]
+            self.server.pipeline.process_dataset_async(dataset_id)
             self._json({"ok": True})
         elif parsed.path == "/api/retry":
             dataset_id = self._body()["dataset_id"]
             self.server.store.retry_job(dataset_id)
-            self.server.pipeline.start()
-            self.server.pipeline.wake_once()
+            self.server.pipeline.process_dataset_async(dataset_id)
             self._json({"ok": True})
         elif parsed.path == "/api/retry-postgres":
             dataset_id = self._body()["dataset_id"]
             self.server.store.retry_postgres(dataset_id)
-            self.server.pipeline.start()
-            self.server.pipeline.wake_once()
+            self.server.pipeline.process_dataset_async(dataset_id)
             self._json({"ok": True})
         else:
             self.send_error(HTTPStatus.NOT_FOUND)
@@ -118,4 +118,3 @@ class AutomationServer(ThreadingHTTPServer):
         if self.cfg.ingest_to_postgres:
             checks.append(postgres_health(self.cfg))
         return checks
-

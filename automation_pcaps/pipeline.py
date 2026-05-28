@@ -32,9 +32,8 @@ class Pipeline:
         with self._lock:
             self._worker_enabled = True
             if self._thread is None or not self._thread.is_alive():
-                self._thread = threading.Thread(target=self._loop, name="pcap-worker", daemon=True)
+                self._thread = threading.Thread(target=self._process_all_once, name="pcap-worker", daemon=True)
                 self._thread.start()
-        self.wake_once()
 
     def stop(self) -> None:
         with self._lock:
@@ -77,6 +76,41 @@ class Pipeline:
                 self._wakeup.get(timeout=self.cfg.poll_interval_seconds)
             except queue.Empty:
                 pass
+
+    def scan_async(self) -> None:
+        threading.Thread(target=self._scan_once_logged, name="pcap-scan", daemon=True).start()
+
+    def process_dataset_async(self, dataset_id: str) -> None:
+        threading.Thread(
+            target=self._process_dataset_once,
+            args=(dataset_id,),
+            name="pcap-job",
+            daemon=True,
+        ).start()
+
+    def _scan_once_logged(self) -> None:
+        try:
+            self.scan_once()
+        except Exception as exc:
+            self.store.add_log(None, "ERROR", str(exc))
+
+    def _process_all_once(self) -> None:
+        self.store.add_log(None, "INFO", "Manual batch processing started")
+        try:
+            self.process_pending_once()
+        except Exception as exc:
+            self.store.add_log(None, "ERROR", str(exc))
+        finally:
+            with self._lock:
+                self._worker_enabled = False
+            self.store.add_log(None, "INFO", "Manual batch processing finished")
+
+    def _process_dataset_once(self, dataset_id: str) -> None:
+        job = self.store.get_job(dataset_id)
+        if job is None:
+            self.store.add_log(dataset_id, "ERROR", f"Job not found: {dataset_id}")
+            return
+        self.process_job(job)
 
     def scan_once(self) -> None:
         if not self.api.has_credentials():

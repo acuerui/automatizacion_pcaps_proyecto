@@ -93,6 +93,17 @@ class ApiClient:
             with urllib.request.urlopen(request, timeout=60) as response:
                 return json.loads(response.read().decode("utf-8"))
         except urllib.error.HTTPError as exc:
+            if auth and exc.code == 401:
+                self.token = None
+                headers.update(self._headers())
+                request = urllib.request.Request(
+                    f"{self.cfg.api_base_url}{path}",
+                    data=data,
+                    method=method,
+                    headers=headers,
+                )
+                with urllib.request.urlopen(request, timeout=60) as response:
+                    return json.loads(response.read().decode("utf-8"))
             detail = exc.read().decode("utf-8", errors="replace")
             raise RuntimeError(f"API {method} {path} failed: {exc.code} {detail}") from exc
 
@@ -105,4 +116,3 @@ class ApiClient:
         return self.user or os.environ.get(self.cfg.api_user_env), self.password or os.environ.get(
             self.cfg.api_password_env
         )
-

@@ -47,6 +47,15 @@ class Config:
 
 
 def load_config(path: Path) -> Config:
+    path = path.expanduser().resolve()
+    repo_root = path.parent.parent
+
+    def resolve_repo_path(value: str) -> Path:
+        candidate = Path(value).expanduser()
+        if candidate.is_absolute():
+            return candidate
+        return repo_root / candidate
+
     with path.open("r", encoding="utf-8-sig") as f:
         data = json.load(f)
 
@@ -56,8 +65,8 @@ def load_config(path: Path) -> Config:
         api_password_env=str(data.get("api_password_env", "DS4MOVEUS_PASSWORD")),
         poll_interval_seconds=int(data.get("poll_interval_seconds", 60)),
         workspace_dir=Path(data["workspace_dir"]).expanduser(),
-        pcap2db_repo_dir=Path(data["pcap2db_repo_dir"]).expanduser(),
-        ndjson2pg_repo_dir=Path(data["ndjson2pg_repo_dir"]).expanduser(),
+        pcap2db_repo_dir=resolve_repo_path(str(data["pcap2db_repo_dir"])),
+        ndjson2pg_repo_dir=resolve_repo_path(str(data["ndjson2pg_repo_dir"])),
         state_db_path=Path(data["state_db_path"]).expanduser(),
         tshark_path=str(data.get("tshark_path", "tshark")),
         display_filter=str(data.get("display_filter", "its")),
@@ -79,4 +88,3 @@ def ensure_dirs(cfg: Config) -> None:
     cfg.raw_dir.mkdir(parents=True, exist_ok=True)
     cfg.processed_dir.mkdir(parents=True, exist_ok=True)
     cfg.out_dir.mkdir(parents=True, exist_ok=True)
-

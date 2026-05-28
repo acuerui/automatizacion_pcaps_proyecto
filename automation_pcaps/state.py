@@ -109,6 +109,10 @@ class StateStore:
                 """
             ).fetchone()
 
+    def get_job(self, dataset_id: str) -> sqlite3.Row | None:
+        with self._lock, self.connect() as conn:
+            return conn.execute("SELECT * FROM jobs WHERE dataset_id = ?", (dataset_id,)).fetchone()
+
     def set_status(self, dataset_id: str, status: str, message: str | None = None, **fields: Any) -> None:
         if status not in STATUSES:
             raise ValueError(f"Unknown status: {status}")
@@ -155,4 +159,3 @@ class StateStore:
 
     def retry_postgres(self, dataset_id: str) -> None:
         self.set_status(dataset_id, "transformed", "Postgres retry requested", error=None)
-
