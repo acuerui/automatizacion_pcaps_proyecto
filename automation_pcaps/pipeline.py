@@ -157,7 +157,19 @@ class Pipeline:
 
     def _download(self, job: sqlite3.Row) -> None:
         dataset_id = str(job["dataset_id"])
-        destination = self.cfg.raw_dir / str(job["filename"])
+        filename = self._current_filename(job)
+        if filename != str(job["filename"]):
+            self.store.set_status(
+                dataset_id,
+                "detected",
+                f"Filename updated from {job['filename']} to {filename}",
+                filename=filename,
+                downloaded_path=None,
+                session_dir=None,
+                sha256=None,
+                error=None,
+            )
+        destination = self.cfg.raw_dir / filename
         temp_destination = destination.with_name(f".{destination.name}.download")
         if temp_destination.exists():
             temp_destination.unlink()
@@ -171,6 +183,16 @@ class Pipeline:
             downloaded_path=str(destination),
             sha256=file_sha256(destination),
         )
+
+    def _current_filename(self, job: sqlite3.Row) -> str:
+        dataset = {
+            "id": job["dataset_id"],
+            "title": job["title"],
+            "mediaType": job["media_type"],
+            "creation_date": job["created_at"],
+            "modification_date": job["modified_at"],
+        }
+        return filename_for_dataset(dataset, self.cfg) or str(job["filename"])
 
     def _transform(self, job: sqlite3.Row) -> None:
         dataset_id = str(job["dataset_id"])

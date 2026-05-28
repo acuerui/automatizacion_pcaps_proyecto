@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import re
 import urllib.parse
 from datetime import datetime, timezone
 from pathlib import Path
@@ -13,9 +14,12 @@ def filename_for_dataset(dataset: dict[str, Any], cfg: Config) -> str | None:
     dataset_id = str(dataset.get("id") or "")
     title = str(dataset.get("title") or "")
     searchable_text = dataset_searchable_text(dataset)
-    looks_like_pcap = "pcap" in searchable_text or "pcapng" in searchable_text
-    if cfg.dataset_title_keywords and not looks_like_pcap:
-        if not any(keyword in searchable_text for keyword in cfg.dataset_title_keywords):
+    looks_like_pcap = dataset_looks_like_capture(dataset, searchable_text)
+    if not looks_like_pcap:
+        return None
+    if cfg.dataset_title_keywords and not any(keyword in searchable_text for keyword in cfg.dataset_title_keywords):
+        standard_name = best_dataset_filename(dataset)
+        if not looks_like_standard_capture(standard_name):
             return None
 
     override = cfg.filename_overrides.get(title) or cfg.filename_overrides.get(dataset_id)
@@ -23,7 +27,7 @@ def filename_for_dataset(dataset: dict[str, Any], cfg: Config) -> str | None:
         return safe_pcap_filename(override, dataset_id)
 
     filename = best_dataset_filename(dataset)
-    if filename.lower().endswith((".pcap", ".pcapng")) and looks_like_standard_capture(filename):
+    if looks_like_standard_capture(filename):
         return safe_pcap_filename(filename, dataset_id)
 
     if cfg.auto_normalize_capture_filenames:
@@ -33,6 +37,20 @@ def filename_for_dataset(dataset: dict[str, Any], cfg: Config) -> str | None:
         return safe_pcap_filename(filename, dataset_id)
 
     return None
+
+
+def dataset_looks_like_capture(dataset: dict[str, Any], searchable_text: str) -> bool:
+    filename = best_dataset_filename(dataset)
+    media_type = str(dataset.get("mediaType") or dataset.get("media_type") or "").lower()
+    extension = str(dataset.get("extension") or "").lower().lstrip(".")
+    return (
+        "pcap" in media_type
+        or extension in {"pcap", "pcapng"}
+        or filename.lower().endswith((".pcap", ".pcapng"))
+        or looks_like_standard_capture(filename)
+        or "pcap" in searchable_text
+        or "pcapng" in searchable_text
+    )
 
 
 def dataset_searchable_text(dataset: dict[str, Any]) -> str:
@@ -83,11 +101,26 @@ def safe_pcap_filename(title: str, fallback: str) -> str:
     return "".join(ch for ch in candidate if ch not in '<>:"/\\|?*').strip() or "capture.pcap"
 
 
+STANDARD_CAPTURE_RE = re.compile(
+    r"^(?P<timestamp>\d{8}T\d{6}Z)_"
+    r"(?P<vendor>cohda|kapsch|swarco)_"
+    r"(?P<device_type>rsu|obu)_"
+    r"(?P<station_id>\d+)"
+    r"(?:_(?P<direction>tx|rx))?"
+    r"(?:\.pcap(?:ng)?)?$",
+    re.IGNORECASE,
+)
+
+
 def looks_like_standard_capture(filename: str) -> bool:
-    parts = Path(filename).stem.split("_")
-    if len(parts) == 4 and parts[1].lower() == "kapsch":
-        return True
-    return len(parts) == 5
+    match = STANDARD_CAPTURE_RE.match(Path(filename).name.strip())
+    if not match:
+        return False
+    vendor = match.group("vendor").lower()
+    direction = match.group("direction")
+    if vendor == "kapsch":
+        return direction is None
+    return direction is not None
 
 
 def build_normalized_capture_filename(dataset: dict[str, Any], cfg: Config) -> str:
@@ -97,7 +130,7 @@ def build_normalized_capture_filename(dataset: dict[str, Any], cfg: Config) -> s
     direction = infer_direction_from_text(lower_title)
     timestamp = timestamp_from_dataset(dataset)
     device_type = infer_device_type_from_text(lower_title) or cfg.default_device_type
-    station_id = cfg.default_station_id
+    station_id = infer_station_id_from_text(lower_title) or cfg.default_station_id
 
     if vendor == "kapsch":
         return f"{timestamp}_{vendor}_{device_type}_{station_id}.pcap"
@@ -117,7 +150,7 @@ def infer_vendor_from_text(text: str) -> str:
 
 
 def infer_direction_from_text(text: str) -> str:
-    if "tx" in text:
+    if re.search(r"(^|[_\W])tx([_\W]|$)", text):
         return "tx"
     return "rx"
 
@@ -130,7 +163,23 @@ def infer_device_type_from_text(text: str) -> str | None:
     return None
 
 
+def infer_station_id_from_text(text: str) -> int | None:
+    match = STANDARD_CAPTURE_RE.match(Path(text).name.strip())
+    if match:
+        return int(match.group("station_id"))
+    for match in re.finditer(r"(?<!\d)(\d{4,})(?!\d)", text):
+        value = match.group(1)
+        if re.fullmatch(r"\d{8}", value):
+            continue
+        return int(value)
+    return None
+
+
 def timestamp_from_dataset(dataset: dict[str, Any]) -> str:
+    title = str(dataset.get("title") or "")
+    match = re.search(r"\d{8}T\d{6}Z", title)
+    if match:
+        return match.group(0)
     raw = str(dataset.get("creation_date") or dataset.get("modification_date") or "")
     if raw:
         with contextlib.suppress(ValueError):
