@@ -1,0 +1,17 @@
+Email Impulso by PONS (Tosina Solutions)
+Tal y como hablamos en nuestra última reunión, quería comentaros cómo podéis formalizar la adhesión al Espacio de Datos y lo que supone, para que vayáis teniendo claro el proceso y los pasos a seguir.
+Os adjunto en el correo el contrato de adhesión para que lo vayáis mirando y, una vez nos deis el ok, empezar con el proceso de adhesión.
+Como me comentasteis, al querer simplemente publicar/compartir vuestros datos, no habrá creación de caso de uso, sino adhesión a uno ya predefinido llamado Marketplace. Aquí podréis publicar vuestros datasets bajo políticas específicas (más o menos restrictivas, como comentamos en la reunión, y restringiendo a quienes vosotros queráis).
+Para la formalización y el coste de dicha adhesión, os resuelvo las dudas: el coste por adhesión es de 6900€, esto es, pagáis por la conexión al Espacio de Datos (conector por entidad). Aparte de esto, también entra lo siguiente:
+Apoyo en la tramitación de la subvención del Kit de Espacio de Datos.
+Onboarding técnico: validación técnica, soporte inicial y despliegue del conector en la nube 24/7.
+Capacidades operativas: acceso a la API de integración, catálogo de datasets y herramientas de monitorización.
+Es importante remarcar que este precio se paga al inicio y tenéis 2 años de acceso gratuito, sin costes de mantenimiento, renovación anual ni permanencia. Estamos hablando para, si os interesan 2 conectores, que haya una posibilidad de rebaja, de la que os informaremos a la mayor brevedad posible.
+El proceso de cobrar por datasets se ha estado valorando en una reunión, pero de momento no está implementado. Sería un añadido a futuro (no muy lejano), ya que tenemos que validarlo y desarrollar el método que vamos a seguir, pero va a ser posible.
+Respondiendo a vuestra pregunta de “¿Cuáles son las licencias predefinidas a día de hoy y si están en el contrato de adhesión?”, no están definidas en el contrato como tal, si no en el propio espacio de datos a la hora de publicar un dataset. Para el tema de políticas (restricciones) lo mismo, están predefinidas dentro del portal y van asociadas a contratos y datasets. Os adjunto unas capturas a modo de ejemplos:
+Próximos pasos:
+Revisar por vuestra parte toda la información y el contrato de adhesión y ver si os cuadra.
+Contrato de adhesión: como os he comentado, adjunto os paso el contrato de adhesión para que podáis revisarlo. Ahí podéis ver qué datos son necesarios y lo que tendréis que rellenar.
+Confirmación: una vez tengamos vuestra confirmación, empezamos con el proceso de adhesión: creación de caso de uso, asignación de credenciales, acceso al espacio, conexión de los datos, etc.
+Creo que están todas las dudas resueltas. Si veis que me he dejado algo no dudéis en escribirme. Muchas gracias.
+Un saludo,

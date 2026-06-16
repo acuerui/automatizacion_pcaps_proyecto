@@ -21,8 +21,9 @@ def file_sha256(path: Path) -> str:
 
 def session_dir_for(cfg: Config, filename: str) -> Path:
     stem = Path(filename).stem
+    session_name = stem.split("_", 1)[0]
     vendor = infer_vendor_from_capture_name(filename)
-    return cfg.workspace_dir / "out" / vendor / "sessions" / stem
+    return cfg.workspace_dir / "out" / vendor / "sessions" / session_name
 
 
 def pcap2db_command(cfg: Config, pcap_filename: str) -> list[str]:

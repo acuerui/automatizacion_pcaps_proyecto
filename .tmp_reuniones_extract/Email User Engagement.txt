@@ -1,0 +1,20 @@
+Asunto: Revisión de ficha técnica – Información de casos de uso para adhesión al Espacio de Datos
+--------------------------------------------------------------------------------------------------------
+Egun on, {{Nombre}},
+En primer lugar, muchas gracias por vuestro interés en participar en el Espacio de Datos y por haber completado en su momento el formulario de adhesión.
+A partir de la información recogida en el formulario y de las reuniones mantenidas, hemos preparado una primera versión de la ficha técnica de vuestro caso de uso, que adjuntamos a este correo.
+El objetivo de esta ficha es avanzar hacia una definición más concreta de:
+cómo os gustaría participar en el espacio de datos,
+qué tipo de datos podríais aportar y/o consumir,
+y qué necesidades, oportunidades o casos de uso os gustaría desarrollar.
+Para poder seguir avanzando en el diseño del espacio de datos y entender mejor las necesidades del ecosistema, os agradeceríamos que pudierais:
+Revisar la ficha técnica adjunta.
+Completar y ampliar los distintos apartados con mayor nivel de detalle, especialmente en lo relativo a:
+casos de uso prioritarios
+datos necesarios y/o aportados
+posibles beneficios y barreras
+requisitos de gobernanza o condiciones de uso
+Cuanto más concreta sea la información, mejor podremos construir una visión clara y específica de cómo cada entidad quiere adherirse y participar en el espacio de datos.
+Os agradeceríamos recibir la ficha revisada antes del {{FECHA}}. Cualquier duda que tengáis, no dudéis en escribirme.
+Muchas gracias de nuevo por vuestra colaboración e implicación.
+Un saludo,

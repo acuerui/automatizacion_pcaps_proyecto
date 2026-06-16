@@ -1,0 +1,1057 @@
+ PRUEBAS DEL ESPACIO DE DATOS DS4MOVEUS
+Pruebas técnicas del funcionamiento del Espacio de Datos
+Índice
+5.1. PRUEBAS DEL ESPACIO DE DATOS DS4MOVEUS1
+1. Introducción3
+2. Información general del entorno de pruebas3
+2.1. Datos generales3
+2.2. Actores participantes3
+2.3. Datasets utilizados en las pruebas4
+3. Checklist general de pruebas4
+4. Fichas de documentación de pruebas8
+DS-01. Acceso correcto con credenciales válidas8
+DS-02. Obtención de token de autenticación8
+DS-03. Reutilización del token durante su periodo de validez9
+DS-04. Comportamiento ante expiración de token10
+DS-05. Acceso con credenciales incorrectas11
+DS-06. Acceso sin autenticación a recurso protegido12
+5. Publicación de datasets13
+DS-07. Publicación de dataset raw tipo PCAP13
+DS-08. Publicación de dataset derivado JSON/CSV14
+DS-09. Publicación de dataset de contexto15
+6. Validación de metadatos16
+DS-10. Validación de metadatos básicos16
+DS-11. Validación de metadatos específicos del caso de uso17
+7. Descubrimiento de datasets18
+DS-12. Búsqueda por catálogo18
+DS-13. Búsqueda por política19
+DS-14. Búsqueda por conector20
+DS-15. Búsqueda por esquema o extensión20
+DS-16. Búsqueda por keywords21
+8. Políticas y contratos22
+DS-17. Dataset sin restricciones22
+DS-18. Política con restricción temporal23
+DS-19. Política con máximo de descargas24
+DS-20. Política restringida por conector25
+9. Consumo, descarga e integridad26
+DS-21. Descarga desde portal26
+DS-22. Consumo automatizado vía API27
+DS-23. Verificación de integridad del fichero descargado28
+10. Trazabilidad operativa29
+DS-24. Registro de descarga o consumo en el sistema29
+11. Interoperabilidad multi-actor30
+DS-25. Publicación por varios proveedores30
+DS-26. Consumo por tercer actor bajo contratos diferenciados31
+12. Robustez, rendimiento y escalabilidad básica32
+DS-27. Publicación y descarga de PCAP representativo32
+DS-28. Validación básica de tiempos de respuesta33
+13. Registro de incidencias34
+14. Resumen de resultados35
+15. Conclusiones generales35
+16. Anexos de evidencias36
+1. Introducción
+El presente apartado recoge la documentación de las pruebas realizadas sobre el espacio de datos DS4MOVEUS, en el marco de la justificación del proyecto BasqueCCAM.
+El objetivo de estas pruebas es generar evidencias objetivas y reproducibles que permitan validar el funcionamiento del espacio de datos como infraestructura técnica y de gobernanza para el intercambio multiactor de datasets vinculados al caso de uso C-ITS.
+Las pruebas se centran en comprobar los siguientes aspectos:
+Acceso operativo y autenticación. 
+Publicación de datasets. 
+Calidad y consistencia de los metadatos. 
+Descubrimiento de datasets mediante filtros. 
+Definición y aplicación de políticas y contratos. 
+Consumo y descarga de datasets. 
+Trazabilidad operativa. 
+Interoperabilidad entre distintos actores. 
+Robustez, rendimiento y escalabilidad básica. 
+La documentación se irá completando a medida que se ejecuten las pruebas, incorporando capturas de pantalla, resultados obtenidos, incidencias detectadas y conclusiones.
+2. Información general del entorno de pruebas
+2.1. Datos generales
+Proyecto: DS4MOVEUS Caso de Uso: Validación C-ITS en carreteras (BasqueCCAM)Espacio de datos: DS4MOVEUSFecha de realización de las pruebas: 11/05/2026Persona/equipo responsable: Álex Cue RuizEntidad: MLC Clúster de Movilidad y LogísticaVersión del entorno/plataforma: V1URL del portal o entorno de pruebas: https://www.ds4moveus.es
+2.2. Actores participantes
+Actor
+Rol en la prueba
+Conector/usuario utilizado
+Observaciones
+acue_admin
+Proveedor de datos
+c_administración/acue_admin
+Prueba simulada como si fuera una Diputación
+jon.gil
+Consumidor de datos
+Conector 5/jon.gil
+Prueba para otro actor
+BasqueCCAM
+Proveedor/consumidor/procesador
+c_basqueccam
+Entidad que lidera el caso de uso
+2.3. Datasets utilizados en las pruebas
+ID dataset
+Nombre del dataset
+Tipo de dataset
+Formato
+Tamaño
+Descripción
+DS-DATA-01
+[Nombre]
+Raw / Derivado / Contexto
+PCAP / JSON / CSV / otro
+[Tamaño]
+[Descripción]
+DS-DATA-02
+[Nombre]
+Raw / Derivado / Contexto
+PCAP / JSON / CSV / otro
+[Tamaño]
+[Descripción]
+DS-DATA-03
+[Nombre]
+Raw / Derivado / Contexto
+PCAP / JSON / CSV / otro
+[Tamaño]
+[Descripción]
+3. Checklist general de pruebas
+ID
+Bloque
+Prueba
+Estado
+Evidencia asociada
+Conclusión
+DS-01
+Acceso y autenticación
+Acceso correcto con credenciales válidas
+Pendiente / En curso / Realizada
+[Captura/log]
+[OK/Parcial/KO]
+DS-02
+Acceso y autenticación
+Obtención de token de autenticación
+Pendiente / En curso / Realizada
+[Captura/log]
+[OK/Parcial/KO]
+DS-03
+Acceso y autenticación
+Reutilización del token durante su validez
+Pendiente / En curso / Realizada
+[Captura/log]
+[OK/Parcial/KO]
+DS-04
+Acceso y autenticación
+Comportamiento ante expiración de token
+Pendiente / En curso / Realizada
+[Captura/log]
+[OK/Parcial/KO]
+DS-05
+Acceso y autenticación
+Acceso con credenciales incorrectas
+Pendiente / En curso / Realizada
+[Captura/log]
+[OK/Parcial/KO]
+DS-06
+Acceso y autenticación
+Acceso sin autenticación a recurso protegido
+Pendiente / En curso / Realizada
+[Captura/log]
+[OK/Parcial/KO]
+DS-07
+Publicación
+Publicación de dataset raw tipo PCAP
+Pendiente / En curso / Realizada
+[Captura/log]
+[OK/Parcial/KO]
+DS-08
+Publicación
+Publicación de dataset derivado JSON/CSV
+Pendiente / En curso / Realizada
+[Captura/log]
+[OK/Parcial/KO]
+DS-09
+Publicación
+Publicación de dataset de contexto
+Pendiente / En curso / Realizada
+[Captura/log]
+[OK/Parcial/KO]
+DS-10
+Metadatos
+Validación de título, descripción, idioma y método de compartición
+Pendiente / En curso / Realizada
+[Captura]
+[OK/Parcial/KO]
+DS-11
+Metadatos
+Validación de catálogo, keywords, esquema y extensión
+Pendiente / En curso / Realizada
+[Captura]
+[OK/Parcial/KO]
+DS-12
+Descubrimiento
+Búsqueda por catálogo
+Pendiente / En curso / Realizada
+[Captura]
+[OK/Parcial/KO]
+DS-13
+Descubrimiento
+Búsqueda por política
+Pendiente / En curso / Realizada
+[Captura]
+[OK/Parcial/KO]
+DS-14
+Descubrimiento
+Búsqueda por conector
+Pendiente / En curso / Realizada
+[Captura]
+[OK/Parcial/KO]
+DS-15
+Descubrimiento
+Búsqueda por esquema/extensión
+Pendiente / En curso / Realizada
+[Captura]
+[OK/Parcial/KO]
+DS-16
+Descubrimiento
+Búsqueda por keywords
+Pendiente / En curso / Realizada
+[Captura]
+[OK/Parcial/KO]
+DS-17
+Políticas y contratos
+Dataset sin restricciones
+Pendiente / En curso / Realizada
+[Captura/log]
+[OK/Parcial/KO]
+DS-18
+Políticas y contratos
+Política con restricción temporal
+Pendiente / En curso / Realizada
+[Captura/log]
+[OK/Parcial/KO]
+DS-19
+Políticas y contratos
+Política con máximo de descargas
+Pendiente / En curso / Realizada
+[Captura/log]
+[OK/Parcial/KO]
+DS-20
+Políticas y contratos
+Política restringida por conector
+Pendiente / En curso / Realizada
+[Captura/log]
+[OK/Parcial/KO]
+DS-21
+Consumo
+Descarga desde portal
+Pendiente / En curso / Realizada
+[Captura]
+[OK/Parcial/KO]
+DS-22
+Consumo
+Consumo automatizado vía API
+Pendiente / En curso / Realizada
+[Log/API]
+[OK/Parcial/KO]
+DS-23
+Consumo
+Verificación de integridad del fichero descargado
+Pendiente / En curso / Realizada
+[Hash/tamaño]
+[OK/Parcial/KO]
+DS-24
+Trazabilidad
+Registro de descarga/consumo en el sistema
+Pendiente / En curso / Realizada
+[Captura/log]
+[OK/Parcial/KO]
+DS-25
+Multi-actor
+Publicación por varios proveedores
+Pendiente / En curso / Realizada
+[Capturas]
+[OK/Parcial/KO]
+DS-26
+Multi-actor
+Consumo por un tercer actor bajo contratos diferenciados
+Pendiente / En curso / Realizada
+[Capturas/logs]
+[OK/Parcial/KO]
+DS-27
+Robustez
+Publicación/descarga de PCAP representativo
+Pendiente / En curso / Realizada
+[Capturas/logs]
+[OK/Parcial/KO]
+DS-28
+Rendimiento
+Validación básica de tiempos de respuesta
+Pendiente / En curso / Realizada
+[Mediciones/logs]
+[OK/Parcial/KO]
+4. Fichas de documentación de pruebas
+DS-01. Acceso correcto con credenciales válidas
+Bloque: Acceso y autenticación.
+Objetivo de la prueba:Comprobar que un usuario o conector autorizado puede acceder correctamente al espacio de datos DS4MOVEUS utilizando credenciales válidas.
+Precondiciones:
+El usuario/conector se encuentra dado de alta en el sistema. 
+Las credenciales están activas. 
+El entorno DS4MOVEUS se encuentra operativo. 
+Pasos ejecutados:
+Acceder al portal o endpoint de autenticación de DS4MOVEUS. 
+Introducir las credenciales del usuario/conector autorizado. 
+Confirmar el inicio de sesión o la respuesta positiva del sistema. 
+Verificar que el usuario accede al entorno con los permisos previstos. 
+Resultado esperado:El sistema permite el acceso al usuario/conector autorizado y muestra los recursos o funcionalidades correspondientes a su perfil.
+Resultado obtenido:[Completar durante la prueba]
+Evidencias:
+Log/API, si aplica: 
+ 
+Incidencias detectadas:Ninguna
+Conclusión:Funciona correctamente
+DS-02. Obtención de token de autenticación
+Bloque: Acceso y autenticación.
+Objetivo de la prueba:Verificar que el sistema genera correctamente un token de autenticación para un conector autorizado.
+Precondiciones:
+Conector autorizado disponible. 
+Credenciales válidas. 
+Endpoint de autenticación operativo. 
+Pasos ejecutados:
+Realizar una solicitud de autenticación al sistema. 
+Introducir las credenciales correspondientes. 
+Obtener la respuesta del sistema. 
+Verificar que la respuesta incluye un token válido. 
+Resultado esperado:El sistema devuelve un token de autenticación válido, que puede ser utilizado para acceder a recursos protegidos durante su periodo de validez.
+Resultado obtenido:[Completar durante la prueba]
+Evidencias:
+Incidencias detectadas:Ninguna
+Conclusión:Funciona correctamente
+DS-03. Reutilización del token durante su periodo de validez
+Bloque: Acceso y autenticación.
+Objetivo de la prueba:Comprobar que un token válido puede reutilizarse para realizar varias operaciones dentro de su periodo de vigencia.
+Precondiciones:
+Token válido obtenido previamente. 
+Recurso protegido disponible. 
+Permisos adecuados para el conector. 
+Pasos ejecutados:
+Obtener un token válido. 
+Realizar una primera solicitud a un recurso protegido. 
+Realizar una segunda solicitud utilizando el mismo token. 
+Verificar que ambas solicitudes son aceptadas por el sistema. 
+Resultado esperado:El sistema acepta el token durante su periodo de validez y permite acceder a los recursos autorizados.
+Resultado obtenido:[Completar durante la prueba]
+Evidencias:
+Log de primera solicitud. 
+Log de segunda solicitud. 
+Incidencias detectadas:Ninguna
+Conclusión:Funciona correctamente
+DS-04. Comportamiento ante expiración de token
+Bloque: Acceso y autenticación.
+Objetivo de la prueba:Verificar que el sistema deniega el acceso cuando se utiliza un token expirado y que, si aplica, permite su renovación mediante el mecanismo previsto.
+Precondiciones:
+Token previamente emitido. 
+Conocimiento del periodo de validez del token o posibilidad de simular expiración. 
+Endpoint protegido disponible. 
+Pasos ejecutados:
+Utilizar un token previamente emitido. 
+Esperar a que expire o simular su expiración. 
+Intentar acceder a un recurso protegido con el token expirado. 
+Verificar la respuesta del sistema. 
+Si aplica, solicitar renovación del token. 
+Resultado esperado:El sistema rechaza el token expirado y devuelve un mensaje o código de error coherente. Si existe mecanismo de refresco, el sistema permite obtener un nuevo token válido.
+Resultado obtenido:[Completar durante la prueba]
+Evidencias:
+Log de acceso con token expirado. 
+Log de renovación del token, si aplica. 
+Incidencias detectadas:Ninguna
+Conclusión:Funciona correctamente
+DS-05. Acceso con credenciales incorrectas
+Bloque: Acceso y autenticación.
+Objetivo de la prueba:Comprobar que el sistema rechaza correctamente los intentos de acceso con credenciales incorrectas.
+Precondiciones:
+Endpoint o portal de autenticación disponible. 
+Usuario/conector de prueba definido. 
+Pasos ejecutados:
+Acceder al portal o endpoint de autenticación. 
+Introducir credenciales incorrectas. 
+Intentar iniciar sesión o solicitar token. 
+Registrar la respuesta del sistema. 
+Resultado esperado:El sistema deniega el acceso y muestra un mensaje o código de error adecuado, sin permitir el acceso a recursos protegidos.
+Resultado obtenido:[Completar durante la prueba]
+Evidencias:
+Captura de error de autenticación. 
+Log/API de respuesta. 
+Incidencias detectadas:[Completar]
+Conclusión:Funciona correctamente
+DS-06. Acceso sin autenticación a recurso protegido
+Bloque: Acceso y autenticación.
+Objetivo de la prueba:Verificar que el sistema impide el acceso a recursos protegidos cuando no se proporciona autenticación.
+Precondiciones:
+Recurso protegido disponible. 
+Endpoint de consumo o descarga identificado. 
+Pasos ejecutados:
+Intentar acceder a un recurso protegido sin token o sin sesión activa. 
+Registrar la respuesta del sistema. 
+Confirmar que el recurso no queda accesible. 
+Resultado esperado:El sistema deniega el acceso y devuelve un código o mensaje de error adecuado.
+Resultado obtenido:[Completar durante la prueba]
+Evidencias:
+Log/API de respuesta. 
+Código de error recibido. 
+Incidencias detectadas:[Completar]
+Conclusión:[Funciona correctamente / Funciona parcialmente / No funciona]
+5. Publicación de datasets
+DS-07. Publicación de dataset raw tipo PCAP
+Bloque: Publicación de datasets.
+Objetivo de la prueba:Comprobar que el espacio de datos permite publicar correctamente un dataset bruto en formato PCAP, representativo de las pruebas C-ITS.
+Precondiciones:
+Usuario/conector proveedor autorizado. 
+Fichero PCAP disponible. 
+Permisos de publicación activos. 
+Catálogo o espacio de publicación configurado. 
+Pasos ejecutados:
+Acceder al portal o API de publicación. 
+Crear un nuevo dataset. 
+Introducir la información descriptiva del dataset. 
+Adjuntar o referenciar el fichero PCAP. 
+Definir el método de compartición. 
+Guardar/publicar el dataset. 
+Verificar que el dataset aparece en el catálogo correspondiente. 
+Resultado esperado:El dataset PCAP se publica correctamente y queda disponible en el catálogo con sus metadatos asociados.
+Resultado obtenido:[Completar durante la prueba]
+Evidencias:
+Captura del formulario de creación del dataset. 
+Captura del fichero PCAP asociado. 
+Captura del dataset publicado en el catálogo. 
+ 
+Incidencias detectadas:Algunos archivos pcaps no deja subir o da error, tanto por la API como por la interfaz web (a mirar con SQS para corrección de errores)
+Conclusión:Funciona parcialmente
+DS-08. Publicación de dataset derivado JSON/CSV
+Bloque: Publicación de datasets.
+Objetivo de la prueba:Verificar que el espacio permite publicar datasets derivados, por ejemplo, ficheros transformados desde PCAP a JSON o CSV.
+Precondiciones:
+Dataset derivado disponible. 
+Usuario/conector con permisos de publicación. 
+Catálogo configurado. 
+Pasos ejecutados:
+Acceder al portal o API de publicación. 
+Crear un nuevo dataset derivado. 
+Introducir los metadatos correspondientes. 
+Adjuntar o referenciar el fichero JSON/CSV. 
+Publicar el dataset. 
+Verificar su aparición en el catálogo. 
+Resultado esperado:El dataset derivado se publica correctamente y puede distinguirse del dataset raw mediante su descripción, formato y metadatos.
+Resultado obtenido:[Completar durante la prueba]
+Evidencias:
+Captura de creación del dataset. 
+Captura de metadatos. 
+Captura del dataset en catálogo. 
+Incidencias detectadas:[Completar]
+Conclusión:[Funciona correctamente / Funciona parcialmente / No funciona]
+DS-09. Publicación de dataset de contexto
+Bloque: Publicación de datasets.
+Objetivo de la prueba:Comprobar que el espacio permite publicar datasets de contexto asociados a las pruebas, como información de tráfico, incidencias, DATEX II u otros datos complementarios.
+Precondiciones:
+Dataset de contexto disponible. 
+Usuario/conector autorizado. 
+Catálogo configurado. 
+Pasos ejecutados:
+Acceder al portal o API de publicación. 
+Crear un nuevo dataset de contexto. 
+Introducir metadatos descriptivos. 
+Adjuntar o referenciar el dataset. 
+Publicar el dataset. 
+Verificar su disponibilidad en el catálogo. 
+Resultado esperado:El dataset de contexto queda publicado y vinculado de forma comprensible al caso de uso o campaña correspondiente.
+Resultado obtenido:[Completar durante la prueba]
+Evidencias:
+Captura de publicación. 
+Captura de metadatos. 
+Captura en catálogo. 
+Incidencias detectadas:No deja subir los NDJSON generados a partir de los pcaps, he probado varios y salta Error al intentar subir el archivo
+Conclusión:No funciona
+6. Validación de metadatos
+DS-10. Validación de metadatos básicos
+Bloque: Metadatos.
+Objetivo de la prueba:Comprobar que el dataset publicado contiene los metadatos básicos necesarios para su identificación y comprensión.
+Metadatos a verificar:
+Título. 
+Descripción. 
+Idioma. 
+Método de compartición. 
+Proveedor. 
+Fecha de publicación. 
+Formato del recurso. 
+Tamaño del fichero, si aplica. 
+Pasos ejecutados:
+Acceder al detalle del dataset publicado. 
+Revisar los metadatos básicos. 
+Verificar que la información es correcta y comprensible. 
+Registrar cualquier ausencia, error o inconsistencia. 
+Resultado esperado:El dataset contiene información suficiente para ser identificado, comprendido y utilizado por otros participantes.
+Resultado obtenido:[Completar durante la prueba]
+Evidencias:
+Captura del detalle del dataset. 
+Incidencias detectadas:Verificar si estos metadatos son los básicos, y si habría que introducir alguno más (en principio no).
+Conclusión:Funciona correctamente, a validar
+DS-11. Validación de metadatos específicos del caso de uso
+Bloque: Metadatos.
+Objetivo de la prueba:Verificar que los datasets pueden documentarse con metadatos específicos relevantes para campañas C-ITS y BasqueCCAM.
+Metadatos específicos a verificar:
+Campaña de pruebas. 
+Tramo o localización. 
+Fecha y hora de captura. 
+RSU asociada. 
+Tipo de mensaje o servicio C-ITS. 
+Formato del fichero. 
+Extensión. 
+Keywords. 
+Esquema. 
+Catálogo asociado. 
+Pasos ejecutados:
+Acceder al detalle del dataset. 
+Revisar los campos de metadatos disponibles. 
+Comprobar si permiten representar la información específica del caso de uso. 
+Documentar limitaciones si algún metadato no puede registrarse correctamente. 
+Resultado esperado:El espacio de datos permite caracterizar los datasets de forma suficiente para diferenciarlos por campaña, localización, fecha/hora, RSU y tipo de dato.
+Resultado obtenido:Para esto he creado dos scripts para transformación de pcaps a NDJSON por sesiones, y una vez transformados insertarlos en una BBDD para llevar trazabilidad de todos los archivos, con los metadatos que se comenta arriba.
+Evidencias:
+Captura de campos de metadatos. 
+Capturas de las tablas generadas y rellenadas automáticamente:
+Incidencias detectadas:Ninguna, funciona correctamente tanto la transformación como la inserción automática de datos a la BBDD.
+Conclusión:Funciona correctamente
+7. Descubrimiento de datasets
+DS-12. Búsqueda por catálogo
+Bloque: Descubrimiento.
+Objetivo de la prueba:Comprobar que el dataset publicado puede localizarse mediante el filtro de catálogo.
+Pasos ejecutados:
+Acceder al buscador o catálogo de datasets. 
+Aplicar el filtro por catálogo. 
+Verificar si el dataset aparece en los resultados. 
+Abrir el detalle del dataset. 
+Resultado esperado:El dataset aparece correctamente en los resultados del catálogo correspondiente.
+Resultado obtenido:[Completar durante la prueba]
+Evidencias:
+Captura del filtro aplicado. 
+Captura del detalle del dataset. 
+Incidencias detectadas:La barra de búsqueda solo te permite buscar si introduces el nombre en orden, si por ejemplo buscas una palabra que está entre medias del nombre del fichero, no te lo saca.
+Los nombres de los conectores no aparecen a los cambios que he hecho en el monitoring, siguen apareciendo Conector 5, Conector 2 (tendría que aparecer c_administracion).
+Conclusión:Funciona parcialmente
+DS-13. Búsqueda por política
+Bloque: Descubrimiento.
+Objetivo de la prueba:Verificar que los datasets pueden localizarse o filtrarse según la política de acceso asociada.
+Pasos ejecutados:
+Acceder al buscador de datasets. 
+Aplicar el filtro por política. 
+Revisar los resultados obtenidos. 
+Comprobar que el dataset aparece bajo la política correspondiente. 
+Resultado esperado:El sistema filtra correctamente los datasets según la política configurada.
+Resultado obtenido:[Completar durante la prueba]
+Evidencias:
+Captura del filtro por política. 
+Captura de resultados. 
+Captura de política asociada al dataset. 
+Incidencias detectadas:Ninguna
+Conclusión:Funciona correctamente
+DS-14. Búsqueda por conector
+Bloque: Descubrimiento.
+Objetivo de la prueba:Comprobar que el dataset puede localizarse mediante el conector proveedor o el participante asociado.
+Pasos ejecutados:
+Acceder al buscador de datasets. 
+Aplicar filtro por conector/proveedor. 
+Revisar los resultados. 
+Verificar que el dataset aparece asociado al conector correcto. 
+Resultado esperado:El sistema muestra correctamente los datasets asociados al conector proveedor seleccionado.
+Resultado obtenido:[Completar durante la prueba]
+Evidencias:
+Captura del filtro por conector. 
+Incidencias detectadas:Ninguna
+Conclusión:Funciona correctamente
+DS-15. Búsqueda por esquema o extensión
+Bloque: Descubrimiento.
+Objetivo de la prueba:Verificar que los datasets pueden localizarse mediante filtros relacionados con el esquema, formato o extensión del fichero.
+Pasos ejecutados:
+Acceder al catálogo de datasets. 
+Aplicar filtro por esquema, formato o extensión. 
+Buscar datasets PCAP, JSON, CSV u otros formatos utilizados. 
+Comprobar que los resultados son coherentes con el filtro aplicado. 
+Resultado esperado:El sistema devuelve datasets cuyo formato, esquema o extensión coincide con el filtro seleccionado.
+Resultado obtenido:[Completar durante la prueba]
+Evidencias:
+Captura del filtro aplicado. 
+Captura de resultados. 
+Captura de formato/extensión del dataset. 
+Incidencias detectadas:Ninguna
+Conclusión:Funciona correctamente
+DS-16. Búsqueda por categoría
+Bloque: Descubrimiento.
+Objetivo de la prueba:Comprobar que el dataset puede localizarse utilizando palabras clave asociadas al caso de uso.
+Keywords propuestas:
+C-ITS. 
+Pasos ejecutados:
+Acceder al buscador del portal. 
+Introducir una o varias keywords. 
+Revisar los resultados obtenidos. 
+Verificar que el dataset aparece correctamente indexado. 
+Resultado esperado:El dataset aparece en los resultados cuando se utilizan keywords relevantes.
+Resultado obtenido:[Completar durante la prueba]
+Evidencias:
+Captura de búsqueda por keyword. 
+Incidencias detectadas:Ninguna
+Conclusión:
+Funciona correctamente
+8. Políticas y contratos
+DS-17. Dataset sin restricciones
+Bloque: Políticas y contratos.
+Objetivo de la prueba:Comprobar que un dataset configurado sin restricciones puede ser accedido por los participantes previstos.
+Precondiciones:
+Dataset publicado. 
+Política sin restricciones configurada. 
+Usuario/conector consumidor disponible. 
+Pasos ejecutados:
+Acceder al detalle del dataset. 
+Verificar la política asociada. 
+Intentar consumir o descargar el dataset desde un conector autorizado. 
+Registrar el resultado. 
+Resultado esperado:El dataset puede ser accedido y descargado sin necesidad de restricciones adicionales, conforme a la política configurada.
+Resultado obtenido:Pruebas realizadas a descargar el dataset restringido al Conector 5 por otro conector. 
+Evidencias:
+Captura de política asociada. 
+Captura de acceso o descarga. 
+Log/API, si aplica. 
+Incidencias detectadas:Ninguna
+Conclusión:Funciona correctamente
+DS-18. Política con restricción temporal
+Bloque: Políticas y contratos.
+Objetivo de la prueba:Verificar que el acceso a un dataset puede limitarse a una ventana temporal determinada.
+Precondiciones:
+Dataset publicado. 
+Política temporal configurada. 
+Conector autorizado disponible. 
+Pasos ejecutados:
+Configurar o revisar la política temporal asociada al dataset. 
+Intentar acceder dentro de la ventana temporal permitida. 
+Intentar acceder fuera de la ventana temporal, si es posible. 
+Registrar las respuestas del sistema. 
+Resultado esperado:El sistema permite el acceso dentro del periodo autorizado y lo deniega fuera de la ventana temporal configurada.
+Resultado obtenido:[Completar durante la prueba]
+Evidencias:
+Captura de configuración de la política temporal. 
+Captura/log de acceso permitido. 
+ 
+Captura/log de acceso denegado fuera de plazo. 
+Incidencias detectadas:Ninguna
+Conclusión:Funciona correctamente
+DS-19. Política con máximo de descargas
+Bloque: Políticas y contratos.
+Objetivo de la prueba:Comprobar que el sistema aplica correctamente un límite máximo de descargas sobre un dataset.
+Precondiciones:
+Dataset publicado. 
+Política de máximo de descargas configurada. 
+Conector consumidor autorizado. 
+Pasos ejecutados:
+Revisar la política de máximo de descargas. 
+Descargar el dataset hasta alcanzar el límite permitido. 
+Intentar realizar una descarga adicional. 
+Registrar el comportamiento del sistema. 
+Resultado esperado:El sistema permite las descargas hasta el límite configurado y deniega las descargas adicionales.
+Resultado obtenido:[Completar durante la prueba]
+Evidencias:
+Captura de política configurada. 
+He creado una con un máximo de 4 descargas.
+Logs de descargas realizadas. 
+Captura/log del acceso denegado al superar el límite. 
+Incidencias detectadas:Ninguna
+Conclusión:Funciona correctamente
+DS-20. Política restringida por conector
+Bloque: Políticas y contratos.
+Objetivo de la prueba:Verificar que el sistema permite restringir el acceso a un dataset a conectores o participantes concretos.
+Precondiciones:
+Dataset publicado. 
+Política restringida por conector configurada. 
+Al menos un conector autorizado y un conector no autorizado disponibles. 
+Pasos ejecutados:
+Revisar la política de acceso restringida por conector. 
+Intentar acceder con un conector autorizado. 
+Intentar acceder con un conector no autorizado. 
+Comparar las respuestas del sistema. 
+Resultado esperado:El conector autorizado puede acceder al dataset, mientras que el conector no autorizado recibe una denegación de acceso.
+Resultado obtenido:[Completar durante la prueba]
+Evidencias:
+Captura de política configurada. 
+Captura/log del acceso denegado. 
+Incidencias detectadas:[Completar]
+Conclusión:[Funciona correctamente / Funciona parcialmente / No funciona]
+9. Consumo, descarga e integridad
+DS-21. Descarga desde portal
+Bloque: Consumo y descarga.
+Objetivo de la prueba:Comprobar que un usuario autorizado puede descargar un dataset desde el portal DS4MOVEUS.
+Precondiciones:
+Dataset publicado. 
+Contrato o política de acceso activa. 
+Usuario/conector autorizado. 
+Pasos ejecutados:
+Acceder al portal como usuario autorizado. 
+Localizar el dataset. 
+Acceder al detalle del dataset. 
+Ejecutar la descarga. 
+Verificar que el fichero se descarga correctamente. 
+Resultado esperado:El fichero se descarga correctamente desde el portal y es accesible localmente.
+Resultado obtenido:[Completar durante la prueba]
+Evidencias:
+Captura del dataset en el portal. 
+Incidencias detectadas:Ninguna, no deja descargar porque está solamente restringido a que lo pueda descargar el Conector 5.
+Conclusión:Funciona correctamente
+DS-22. Consumo automatizado vía API
+Bloque: Consumo y descarga.
+Objetivo de la prueba:Verificar que el dataset puede consumirse de forma automatizada mediante API, permitiendo la integración futura con herramientas de procesado como Minerva.
+Precondiciones:
+Endpoint de consumo disponible. 
+Token válido. 
+Dataset accesible para el conector consumidor. 
+Contrato o política activa. 
+Pasos ejecutados:
+Obtener token de autenticación. 
+Realizar una llamada API para localizar o acceder al dataset. 
+Ejecutar la descarga o consumo del recurso mediante API. 
+Registrar la respuesta del sistema. 
+Verificar que el fichero recibido es correcto. 
+Resultado esperado:La API permite consumir el dataset de forma automatizada, devolviendo una respuesta correcta y el recurso esperado.
+Resultado obtenido:[Completar durante la prueba]
+Evidencias:
+Log de autenticación. 
+Log de llamada API. 
+{
+            "id": "https://57.130.55.131:8082/api/artifacts/e8b54437-78e9-4b46-be5b-763fcf47bacb",
+            "title": "captureTx_con CPM y con OBU_COHDA",
+            "description": "prueba_sin_restricciones",
+            "creation_date": "2026-05-14T10:04:33.333000Z",
+            "modification_date": "2026-05-14T10:04:33.333000Z",
+            "mediaType": "pcap0",
+            "connector": "Connector 2",
+            "category": {
+                "id": "https://57.130.55.131:8082/api/catalogs/1fdb3724-39f6-43eb-91e0-0e52dbfe07db",
+                "title": "C-ITS"
+            },
+            "subcategories": [
+                "C-ITS"
+            ],
+            "contract": {
+                "id": "https://57.130.55.131:8082/api/contracts/5228f016-b02a-4d21-b922-c943846fab26",
+                "title": "contrato_proyecto_DS4MOVEUS"
+            },
+            "policy": {
+                "id": "https://57.130.55.131:8082/api/rules/93920bbd-3ab9-48ef-888a-4d90542d40e1",
+                "title": "Sin restricciones",
+                "description": "Política sin restricciones"
+            },
+            "offer_title": "captureTx_con CPM y con OBU_COHDA",
+            "schema": "libre"
+        }
+Código de respuesta HTTP. 
+Incidencias detectadas:Ninguna
+Conclusión:Funciona correctamente
+DS-23. Verificación de integridad del fichero descargado
+Bloque: Consumo y descarga.
+Objetivo de la prueba:Comprobar que el fichero descargado mantiene la integridad respecto al fichero original publicado.
+Precondiciones:
+Fichero original disponible. 
+Fichero descargado disponible. 
+Herramienta para cálculo de hash o comparación de tamaño. 
+Pasos ejecutados:
+Calcular el tamaño del fichero original. 
+Calcular el tamaño del fichero descargado. 
+Calcular hash del fichero original, si aplica. 
+Calcular hash del fichero descargado, si aplica. 
+Comparar los valores obtenidos. 
+Resultado esperado:El fichero descargado coincide con el fichero original en tamaño y/o hash, demostrando que no se ha alterado durante el proceso de consumo.
+Resultado obtenido:[Completar durante la prueba]
+Evidencias:
+Tamaño fichero original: 83Kb 
+Tamaño fichero descargado: 83Kb
+Captura o log de comparación. 
+Original:
+Descargado:
+Incidencias detectadas:Se descarga correctamente, y tienen el mismo hashId
+Conclusión:Funciona correctamente
+10. Trazabilidad operativa
+DS-24. Registro de descarga o consumo en el sistema
+Bloque: Trazabilidad.
+Objetivo de la prueba:Verificar que el espacio de datos registra adecuadamente las operaciones de acceso, consumo o descarga realizadas sobre un dataset.
+Precondiciones:
+Dataset publicado. 
+Usuario/conector consumidor disponible. 
+Operación de descarga o consumo realizada. 
+Acceso a registros, logs o vistas de trazabilidad, si aplica. 
+Pasos ejecutados:
+Realizar una operación de consumo o descarga. 
+Acceder al apartado de trazabilidad, logs o registros disponibles. 
+Verificar si la operación queda reflejada. 
+Revisar la información registrada: usuario/conector, dataset, fecha/hora, operación, resultado. 
+Resultado esperado:El sistema registra la operación de consumo o descarga con información suficiente para auditar el ciclo de vida del dato.
+Resultado obtenido:[Completar durante la prueba]
+Evidencias:
+Captura del registro de descarga. 
+Log de operación. 
+Fecha/hora registrada. 
+Identificador de dataset/conector. 
+Incidencias detectadas:Tema de logs de transacciones está reportado que no funciona, eventualmente lo corregirán.
+Conclusión:No funciona
+11. Interoperabilidad multi-actor
+DS-25. Publicación por varios proveedores
+Bloque: Interoperabilidad multi-actor.
+Objetivo de la prueba:Comprobar que el espacio de datos permite que distintos proveedores publiquen datasets de forma diferenciada dentro del mismo entorno.
+Precondiciones:
+Al menos dos conectores o usuarios proveedores disponibles. 
+Datasets diferenciados para cada proveedor. 
+Permisos de publicación activos. 
+Pasos ejecutados:
+Acceder con el primer proveedor. 
+Publicar un dataset. 
+Acceder con el segundo proveedor. 
+Publicar otro dataset. 
+Verificar que ambos datasets aparecen correctamente en el catálogo. 
+Comprobar que cada dataset queda asociado a su proveedor correspondiente. 
+Resultado esperado:El espacio permite la publicación de datasets por distintos proveedores y mantiene la identificación correcta de cada uno.
+Resultado obtenido:[Completar durante la prueba]
+Evidencias:
+Captura del dataset publicado por proveedor 1. 
+Captura del dataset publicado por proveedor 2. 
+Captura del catálogo con ambos datasets. 
+Captura de identificación del proveedor/conector. 
+Incidencias detectadas:[Completar]
+Conclusión:[Funciona correctamente / Funciona parcialmente / No funciona]
+DS-26. Consumo por tercer actor bajo contratos diferenciados
+Bloque: Interoperabilidad multi-actor.
+Objetivo de la prueba:Validar que un tercer actor puede consumir datasets publicados por distintos proveedores, bajo contratos o políticas diferenciadas.
+Precondiciones:
+Datasets publicados por al menos dos proveedores. 
+Tercer actor consumidor disponible. 
+Contratos o políticas configuradas para cada dataset. 
+Pasos ejecutados:
+Acceder con el actor consumidor. 
+Localizar los datasets publicados por los proveedores. 
+Revisar las condiciones de acceso de cada dataset. 
+Consumir o descargar los datasets permitidos. 
+Verificar que las restricciones se aplican correctamente en cada caso. 
+Resultado esperado:El actor consumidor accede únicamente a los datasets para los que dispone de contrato o permiso, y el sistema aplica las restricciones definidas por cada proveedor.
+Resultado obtenido:[Completar durante la prueba]
+Evidencias:
+Captura del catálogo visible para el consumidor. 
+Captura de contratos/políticas. 
+Captura/log de consumo autorizado. 
+Captura/log de consumo denegado, si aplica. 
+Incidencias detectadas:[Completar]
+Conclusión:[Funciona correctamente / Funciona parcialmente / No funciona]
+12. Robustez, rendimiento y escalabilidad básica
+DS-27. Publicación y descarga de PCAP representativo
+Bloque: Robustez.
+Objetivo de la prueba:Comprobar que el espacio de datos soporta la publicación y descarga de un fichero PCAP de tamaño representativo para el caso de uso.
+Precondiciones:
+Fichero PCAP representativo disponible. 
+Usuario/conector proveedor autorizado. 
+Usuario/conector consumidor autorizado. 
+Política/contrato configurado. 
+Pasos ejecutados:
+Publicar el fichero PCAP representativo. 
+Registrar el tamaño del fichero. 
+Localizar el dataset en el catálogo. 
+Descargar el fichero desde el portal o API. 
+Registrar el tiempo aproximado de publicación y descarga, si aplica. 
+Verificar que el fichero descargado es correcto. 
+Resultado esperado:El sistema permite publicar y descargar el fichero PCAP sin errores ni degradaciones críticas.
+Resultado obtenido:[Completar durante la prueba]
+Evidencias:
+Tamaño del fichero: [Completar]. 
+Tiempo de publicación: [Completar]. 
+Tiempo de descarga: [Completar]. 
+Capturas del proceso. 
+Logs, si aplica. 
+Incidencias detectadas:[Completar]
+Conclusión:[Funciona correctamente / Funciona parcialmente / No funciona]
+DS-28. Validación básica de tiempos de respuesta
+Bloque: Rendimiento y escalabilidad.
+Objetivo de la prueba:Obtener evidencias básicas sobre los tiempos de respuesta de operaciones críticas del espacio de datos.
+Operaciones a medir:
+Inicio de sesión/autenticación. 
+Búsqueda de datasets. 
+Apertura del detalle de dataset. 
+Publicación de dataset. 
+Descarga de dataset. 
+Llamada API de consumo, si aplica. 
+Pasos ejecutados:
+Ejecutar cada operación definida. 
+Registrar el tiempo aproximado de respuesta. 
+Repetir la medición si se considera necesario. 
+Identificar posibles retardos o errores. 
+Resultado esperado:Las operaciones críticas se ejecutan en tiempos razonables y sin errores recurrentes para un escenario de uso representativo.
+Resultado obtenido:
+Operación
+Tiempo medido
+Resultado
+Observaciones
+Autenticación
+[Completar]
+[OK/KO]
+[Observaciones]
+Búsqueda de dataset
+[Completar]
+[OK/KO]
+[Observaciones]
+Apertura detalle dataset
+[Completar]
+[OK/KO]
+[Observaciones]
+Publicación dataset
+[Completar]
+[OK/KO]
+[Observaciones]
+Descarga dataset
+[Completar]
+[OK/KO]
+[Observaciones]
+Consumo API
+[Completar]
+[OK/KO]
+[Observaciones]
+Evidencias:
+Capturas de operaciones. 
+Logs de API. 
+Registro manual de tiempos. 
+Incidencias detectadas:[Completar]
+Conclusión:[Funciona correctamente / Funciona parcialmente / No funciona]
+13. Registro de incidencias
+ID incidencia
+Prueba asociada
+Descripción
+Severidad
+Estado
+Acción correctiva
+INC-01
+[DS-XX]
+[Descripción de la incidencia]
+Baja / Media / Alta
+Abierta / Cerrada
+[Acción]
+INC-02
+[DS-XX]
+[Descripción de la incidencia]
+Baja / Media / Alta
+Abierta / Cerrada
+[Acción]
+14. Resumen de resultados
+Bloque de pruebas
+Nº pruebas realizadas
+Nº correctas
+Nº parciales
+Nº fallidas
+Observaciones
+Acceso y autenticación
+[ ]
+[ ]
+[ ]
+[ ]
+[ ]
+Publicación de datasets
+[ ]
+[ ]
+[ ]
+[ ]
+[ ]
+Metadatos
+[ ]
+[ ]
+[ ]
+[ ]
+[ ]
+Descubrimiento
+[ ]
+[ ]
+[ ]
+[ ]
+[ ]
+Políticas y contratos
+[ ]
+[ ]
+[ ]
+[ ]
+[ ]
+Consumo y descarga
+[ ]
+[ ]
+[ ]
+[ ]
+[ ]
+Trazabilidad
+[ ]
+[ ]
+[ ]
+[ ]
+[ ]
+Multi-actor
+[ ]
+[ ]
+[ ]
+[ ]
+[ ]
+Robustez/rendimiento
+[ ]
+[ ]
+[ ]
+[ ]
+[ ]
+15. Conclusiones generales
+A partir de las pruebas realizadas, se concluye que el espacio de datos DS4MOVEUS [permite / permite parcialmente / no permite] soportar el ciclo de vida del dato previsto para el caso de uso BasqueCCAM.
+Las pruebas han permitido validar los siguientes aspectos:
+[Completar con aspectos validados] 
+[Completar con aspectos validados] 
+[Completar con aspectos validados] 
+Asimismo, se han identificado las siguientes limitaciones o aspectos de mejora:
+[Completar con limitaciones] 
+[Completar con limitaciones] 
+[Completar con limitaciones] 
+En conjunto, las evidencias generadas permiten justificar que el espacio de datos DS4MOVEUS [es apto / requiere ajustes / no es apto en su estado actual] para soportar un escenario de intercambio multiactor de datasets técnicos vinculados a pruebas C-ITS, incluyendo publicación, descubrimiento, control de acceso, consumo y trazabilidad.
+16. Anexos de evidencias
+Anexo I. Capturas de pantalla
+Nº captura
+Prueba asociada
+Descripción
+Página/sección
+Captura 1
+DS-XX
+[Descripción]
+[Página]
+Captura 2
+DS-XX
+[Descripción]
+[Página]
+Captura 3
+DS-XX
+[Descripción]
+[Página]
+Anexo II. Logs o evidencias API
+Nº evidencia
+Prueba asociada
+Descripción
+Código respuesta
+Observaciones
+Log 1
+DS-XX
+[Descripción]
+[Código]
+[Observaciones]
+Log 2
+DS-XX
+[Descripción]
+[Código]
+[Observaciones]
+Anexo III. Ficheros utilizados
+Fichero
+Tipo
+Tamaño
+Uso en la prueba
+Observaciones
+[Nombre fichero]
+PCAP / JSON / CSV
+[Tamaño]
+[DS-XX]
+[Observaciones]
+[Nombre fichero]
+PCAP / JSON / CSV
+[Tamaño]
+[DS-XX]
+[Observaciones]

@@ -1,0 +1,176 @@
+PCAP2DB – Documentación del sistema
+Índice
+1. Descripción general3
+2. Flujo de procesamiento3
+Extract3
+Transform3
+3. Tablas generadas3
+test_sessions3
+devices4
+packets4
+its_messages4
+secured_packets4
+secured_packet_permissions4
+Tablas específicas4
+4. Lógica principal5
+4.1 Detección de tipo de mensaje5
+4.2 Dirección TX / RX5
+Kapsch5
+Cohda / Swarco5
+4.3 Vendor5
+4.4 PKI (seguridad)6
+5. Estándar de nombres de fichero6
+Campos:6
+6. Uso del sistema (CLI)6
+7. Casos validados7
+9. Próximos pasos7
+1. Descripción general
+pcap2db es un framework desarrollado para convertir capturas de red (PCAP/PCAPNG) en datos estructurados, enfocado en mensajes ITS (CAM, DENM, CPM, SPATEM, MAPEM, IVI).
+El sistema automatiza un proceso que normalmente se realiza manualmente con Wireshark, permitiendo trabajar con grandes volúmenes de datos y facilitando su integración en bases de datos o sistemas analíticos.
+2. Flujo de procesamiento
+El sistema se basa en dos fases principales:
+PCAP / PCAPNG    ↓Extract (tshark -T ek)    ↓EK NDJSON    ↓Transform (pcap2db)    ↓Tablas NDJSON
+Extract
+Usa tshark 
+Aplica filtro ITS 
+Genera un NDJSON con todas las capas del paquete 
+Transform
+Interpreta los mensajes ITS 
+Normaliza datos 
+Genera tablas estructuradas
+3. Tablas generadas
+El sistema genera varias tablas en formato NDJSON:
+test_sessions
+Representa la sesión de captura.
+Kapsch → 2 sesiones (TX y RX) 
+Otros vendors → 1 sesión 
+devices
+Identifica los dispositivos detectados.
+Campos principales:
+device_type (OBU / RSU) 
+vendor 
+station_id 
+mac_address 
+packets
+Representa cada paquete de red.
+Campos:
+timestamp 
+direction (TX / RX) 
+device_id 
+its_messages
+Representa cada mensaje ITS.
+Campos:
+message_type (CAM, DENM, CPM…) 
+station_id 
+payload_json (mensaje completo) 
+has_pki 
+secured_packets
+Información de seguridad (PKI):
+tipo de firma 
+certificado 
+clave pública
+secured_packet_permissions
+Permisos asociados al certificado (PSID + SSP)
+Tablas específicas
+Una por tipo de mensaje:
+cam_messages_basic_vehicle 
+denm_messages 
+cpm_messages 
+spatem_messages 
+mapem_messages 
+ivi_messages 
+4. Lógica principal
+4.1 Detección de tipo de mensaje
+Se realiza en este orden:
+its_messageId (más fiable) 
+Puerto BTP (fallback) 
+Ejemplos:
+1 → DENM2 → CAM14 → CPM
+4.2 Dirección TX / RX
+Kapsch
+Se calcula automáticamente usando:
+station_id del dispositivo 
+tipo (OBU / RSU) 
+station_id del emisor 
+Resultado:
+separación en TX y RX 
+2 sesiones distintas 
+Cohda / Swarco
+Se obtiene del nombre del fichero:
+..._tx.pcap → TX..._rx.pcap → RX
+4.3 Vendor
+Se obtiene principalmente del nombre del fichero:
+..._kapsch_......_cohda_......_swarco_...
+Fallback:
+OUI de la MAC 
+4.4 PKI (seguridad)
+El sistema detecta si el mensaje está firmado y extrae:
+tipo de firma (ej: sha256) 
+certificado 
+clave pública 
+permisos (PSID) 
+5. Estándar de nombres de fichero
+Formato:
+YYYYMMDDThhmmssZ_vendor_deviceType_stationID_direction.pcap
+Ejemplos:
+20250619T130600Z_kapsch_rsu_10340552.pcap20260323T120600Z_cohda_obu_65236_rx.pcap20260323T120600Z_swarco_obu_65236_tx.pcap
+Campos:
+timestamp → UTC (con Z) 
+vendor → kapsch / cohda / swarco 
+deviceType → obu / rsu 
+stationID → identificador ITS 
+direction → tx / rx (no obligatorio en Kapsch) 
+Este formato es obligatorio para el correcto funcionamiento del sistema.
+6. Uso del sistema (CLI)
+Comando principal:
+python -m pcap2db run --in <pcap> --workspace <ruta>
+Ejemplo:
+python -m pcap2db run \  --in 20250619T130600Z_kapsch_rsu_10340552.pcap \  --workspace C:\pcap_workspace
+Esto ejecuta:
+Extract 
+Transform 
+7. Casos validados
+Se han probado distintos escenarios:
+Vendor
+Resultado
+Kapsch
+TX/RX automático correcto
+Cohda
+RX por nombre correcto
+Swarco
+TX por nombre correcto
+8. Evidencias
+20250619T130600Z_kapsch_rsu_10340552.pcap20260323T120600Z_cohda_obu_65236_rx.pcap20260323T120600Z_swarco_obu_65236_tx.pcap
+Caso
+Fichero de entrada
+Vendor
+Tipo dispositivo
+Dirección esperada
+Comando ejecutado
+Resultado
+1
+...kapsch_rsu...pcap
+Kapsch
+RSU
+TX/RX automático
+python -m pcap2db run ...
+OK
+2
+...cohda_obu..._rx.pcap
+Cohda
+OBU
+RX
+python -m pcap2db run ...
+OK
+3
+...swarco_obu..._tx.pcap
+Swarco
+OBU
+TX
+python -m pcap2db run ...
+OK
+9. Próximos pasos
+Ingesta en base de datos (en preparación de ndjson2pg.py)
+Mejora del parser de CPM 
+Validaciones automáticas 
+Integración con Minerva

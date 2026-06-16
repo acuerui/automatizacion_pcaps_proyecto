@@ -1,0 +1,581 @@
+NDJSON2PG – Documentación del sistema
+Índice
+1. Descripción general4
+2. Objetivo del sistema4
+3. Relación con pcap2db4
+4. Flujo de procesamiento5
+5. Estructura esperada de entrada5
+6. Ficheros NDJSON procesados6
+6.1 Ficheros obligatorios6
+6.2 Ficheros opcionales6
+7. Configuración de sistema6
+8. Uso del sistema7
+8.1 Comando básico7
+8.2 Uso indicando schema7
+9. Lógica principal7
+9.1 Lectura de argumentos8
+9.2 Carga de configuración8
+9.3 Validación de carpeta de sesión8
+9.4 Resumen de sesión8
+9.5 Conexión a PostgreSQL8
+9.6 Selección de schema9
+10. Orden de carga en la BBDD9
+11. Tablas cargadas9
+11.1 test_sessions9
+11.2 devices10
+11.3 packets11
+11.4 its_messages11
+11.5 secured_packets12
+11.6 secured_packet_permissions12
+11.7 cam_messages_basic_vehicle13
+11.8 denm_messages13
+11.9 cpm_messages14
+11.10 spatem_messages15
+11.11 mapem_messages15
+11.12 ivi_messages15
+12. Gestión de identificadores16
+13. Gestión de dispositivos duplicados16
+14. Tratamiento de coordenadas y campos JSON17
+14.1 Coordenadas17
+14.2 Campos JSON17
+15. Gestión de errores y transacciones18
+16. Evidencias de funcionamiento19
+16.1 Evidencias de entrada19
+16.2 Evidencias de ejecución19
+16.3 Evidencias en base de datos20
+16.4 Comparativa NDJSON vs BBDD21
+17. Integración con Minerva22
+18. Casos validados23
+19. Limitaciones actuales24
+20. Próximos pasos (opcionales a futuro)24
+Anexo I. Dependencias27
+Anexo II. Ejecución paso a paso28
+Paso 1. Instalar dependencias28
+Paso 2. Configurar fichero .env28
+Paso 3. Verificar carpeta de sesión28
+Paso 4. Ejecutar ingesta28
+Paso 5. Revisar salida de consola28
+Paso 6. Validar en PostgreSQL28
+Anexo III. Salida esperada por consola29
+Anexo IV. Salida esperada en caso de error30
+1. Descripción general
+ndjson2pg es una herramienta desarrollada para cargar en una base de datos PostgreSQL los ficheros NDJSON generados previamente por el sistema pcap2db.
+El proyecto forma parte del flujo completo de procesamiento de capturas ITS/V2X, en el que los archivos PCAP son transformados primero en tablas NDJSON estructuradas y, posteriormente, dichas tablas son ingeridas en una base de datos relacional para su explotación, consulta y análisis.
+El sistema permite automatizar la carga de sesiones completas, manteniendo la relación entre las distintas entidades generadas por pcap2db, como sesiones, dispositivos, paquetes, mensajes ITS, información de seguridad PKI y tablas específicas por tipo de mensaje.
+2. Objetivo del sistema
+El objetivo principal de ndjson2pg es convertir una salida estructurada en ficheros NDJSON en registros persistentes dentro de PostgreSQL.
+En concreto, el sistema permite:
+leer una carpeta de sesión generada por pcap2db; 
+validar que existen los ficheros NDJSON mínimos necesarios; 
+cargar los datos en el orden correcto; 
+mantener las relaciones entre tablas; 
+traducir los identificadores locales de los NDJSON a identificadores reales de base de datos; 
+evitar la duplicidad de dispositivos ya registrados; 
+insertar datos específicos de mensajes CAM, DENM, CPM, SPATEM, MAPEM e IVI; 
+cargar información de seguridad cuando existe PKI; 
+ejecutar la ingesta dentro de una única transacción; 
+hacer rollback automático si se produce cualquier error.
+3. Relación con pcap2db
+El ndjson2pg no procesa directamente archivos PCAP. Su entrada son los ficheros NDJSON generados por pcap2db.
+El flujo completo queda dividido en dos proyectos complementarios:
+PCAP / PCAPNG    ↓pcap2db    ↓Tablas NDJSON    ↓ndjson2pg    ↓PostgreSQL
+El primer proyecto, pcap2db, se encarga de extraer e interpretar los datos de red y convertirlos en tablas NDJSON.
+El segundo proyecto, ndjson2pg, se encarga de ingerir esas tablas NDJSON en la base de datos PostgreSQL, respetando el modelo relacional definido.
+4. Flujo de procesamiento
+El sistema trabaja sobre una carpeta de sesión. Esta carpeta debe contener los ficheros NDJSON generados por pcap2db.
+El flujo lógico de procesamiento es el siguiente:
+Carpeta de sesión NDJSON    ↓Validación de ficheros obligatorios    ↓Carga de configuración PostgreSQL    ↓Conexión a base de datos    ↓Selección de schema    ↓Carga de tablas base    ↓Carga de tablas opcionales    ↓Commit de la transacción
+Si se produce un error en cualquier punto del proceso, se ejecuta un rollback y no se consolidan los cambios en base de datos.
+5. Estructura esperada de entrada
+El script espera recibir una carpeta de sesión mediante el argumento:
+--session-dir
+La ruta esperada corresponde a una carpeta generada por pcap2db, por ejemplo:
+out/<vendor>/sessions/<capture_name>/
+Ejemplo:
+out/kapsch/sessions/20250619T130600Z_kapsch_rsu_10340552/
+Dentro de esa carpeta deben existir, al menos, los ficheros base obligatorios:
+test_sessions.ndjsondevices.ndjsonpackets.ndjsonits_messages.ndjson
+Además, pueden existir ficheros opcionales asociados a seguridad o tipos concretos de mensajes ITS.
+6. Ficheros NDJSON procesados
+6.1 Ficheros obligatorios
+Los siguientes ficheros son obligatorios para que la carga pueda ejecutarse:
+test_sessions.ndjsondevices.ndjsonpackets.ndjsonits_messages.ndjson
+Si alguno de estos ficheros no existe, el proceso se detiene antes de conectarse o cargar datos.
+6.2 Ficheros opcionales
+Los siguientes ficheros son opcionales:
+secured_packets.ndjsonsecured_packet_permissions.ndjsoncam_messages_basic_vehicle.ndjsondenm_messages.ndjsoncpm_messages.ndjsonspatem_messages.ndjsonmapem_messages.ndjsonivi_messages.ndjson
+Si el fichero no existe o existe pero está vacío, el sistema simplemente omite su carga y continúa con el resto del proceso.
+7. Configuración de sistema
+La configuración de conexión a PostgreSQL se realiza mediante variables de entorno, normalmente definidas en un fichero .env.
+El sistema utiliza la librería python-dotenv para cargar dichas variables.
+7.1 Variables obligatorias
+POSTGRES_HOSTPOSTGRES_DBPOSTGRES_USERPOSTGRES_PASSWORD
+7.2 Variables opcionales
+POSTGRES_PORTPOSTGRES_SCHEMA
+Si no se informa POSTGRES_PORT, se utiliza por defecto el puerto 5432.
+Si no se informa POSTGRES_SCHEMA, se utiliza por defecto el schema public.
+7.3 Ejemplo de fichero .env
+Esto como ejemplo, no son las credenciales válidas para nuestra BBDD:
+POSTGRES_HOST=localhostPOSTGRES_PORT=5432POSTGRES_DB=its_databasePOSTGRES_USER=postgresPOSTGRES_PASSWORD=postgresPOSTGRES_SCHEMA=public
+8. Uso del sistema
+El script se ejecuta desde línea de comandos mediante Python.
+8.1 Comando básico
+python ndjson2pg.py --session-dir <ruta_carpeta_sesion>
+Ejemplo:
+python ndjson2pg.py --session-dir out/kapsch/sessions/20250619T130600Z_kapsch_rsu_10340552
+8.2 Uso indicando schema
+También puede indicarse el schema de PostgreSQL en el momento de la ejecución:
+python ndjson2pg.py --session-dir out/kapsch/sessions/20250619T130600Z_kapsch_rsu_10340552 --schema public
+Si se utiliza el argumento --schema, este valor sobrescribe el valor definido en POSTGRES_SCHEMA.
+9. Lógica principal
+La lógica principal del sistema se organiza en las siguientes fases:
+9.1 Lectura de argumentos
+El script recibe por línea de comandos la ruta a la carpeta de sesión mediante el parámetro obligatorio --session-dir.
+Opcionalmente, puede recibir el parámetro --schema.
+9.2 Carga de configuración
+El sistema carga las variables de entorno necesarias para conectarse a PostgreSQL.
+Si falta alguna variable obligatoria, se lanza un error y el proceso se detiene.
+9.3 Validación de carpeta de sesión
+El sistema comprueba que:
+la ruta existe; 
+la ruta corresponde a una carpeta; 
+dentro de la carpeta existen los ficheros NDJSON base obligatorios. 
+9.4 Resumen de sesión
+Antes de comenzar la ingesta, el sistema imprime por consola un resumen de los ficheros detectados.
+Ejemplo:
+Sesión: C:\workspace\out\kapsch\sessions\20250619T130600Z_kapsch_rsu_10340552  OK  test_sessions.ndjson  OK  devices.ndjson  OK  packets.ndjson  OK  its_messages.ndjson  OK  secured_packets.ndjson  --  secured_packet_permissions.ndjson  OK  cam_messages_basic_vehicle.ndjson  --  denm_messages.ndjson  OK  cpm_messages.ndjson  --  spatem_messages.ndjson  --  mapem_messages.ndjson  --  ivi_messages.ndjson
+9.5 Conexión a PostgreSQL
+El sistema abre una conexión a PostgreSQL usando psycopg.
+La conexión se abre con autocommit=False, por lo que todo el proceso se ejecuta dentro de una única transacción.
+9.6 Selección de schema
+Una vez abierta la conexión, se ejecuta:
+SET search_path TO <schema>
+Esto permite que las inserciones se hagan sobre el schema configurado sin tener que prefijar cada tabla manualmente.
+10. Orden de carga en la BBDD
+El orden de carga es fundamental porque existen relaciones entre las tablas.
+El script carga las tablas en este orden:
+1. test_sessions2. devices3. packets4. its_messages5. secured_packets6. secured_packet_permissions7. cam_messages_basic_vehicle8. denm_messages9. cpm_messages10. spatem_messages11. mapem_messages12. ivi_messages
+Este orden garantiza que las entidades padre existan antes de insertar las entidades dependientes.
+Por ejemplo:
+packets necesita que existan previamente test_sessions y devices; 
+its_messages necesita que existan previamente packets y test_sessions; 
+secured_packets necesita que existan previamente its_messages; 
+las tablas específicas CAM, DENM, CPM, SPATEM, MAPEM e IVI utilizan como identificador el ID de its_messages.
+11. Tablas cargadas
+11.1 test_sessions
+Representa una sesión de captura o ejecución.
+Se carga desde:
+test_sessions.ndjson
+Campos insertados:
+namedescriptionlocationstart_timeend_timeparticipantsnotes
+Durante la carga, el ID local del NDJSON se mapea al ID real generado por PostgreSQL.
+Ejemplo:
+id local NDJSON: 1id base de datos: 37
+Este mapeo se utiliza después para insertar paquetes y mensajes asociados a la sesión correcta.
+11.2 devices
+Representa los dispositivos detectados en la captura, como OBUs o RSUs.
+Se carga desde:
+devices.ndjson
+Campos insertados:
+device_typevendormodelmac_addressip_addressstation_idcreated_at
+La carga de dispositivos incluye una lógica específica para evitar duplicados.
+Antes de insertar un dispositivo nuevo, el sistema comprueba si ya existe un dispositivo con la misma mac_address.
+Si existe, reutiliza su ID.
+Si no existe MAC pero existe ip_address, comprueba si ya hay un dispositivo con esa IP.
+Si tampoco existe, inserta un nuevo dispositivo.
+El resultado se almacena en el mapa interno de dispositivos para que los paquetes puedan asociarse correctamente.
+11.3 packets
+Representa cada paquete de red procesado.
+Se carga desde:
+packets.ndjson
+Campos insertados:
+session_iddevice_idpacket_timestampdirection
+Antes de insertar cada paquete, el sistema resuelve:
+el session_id local contra el ID real de test_sessions; 
+el device_id local contra el ID real de devices. 
+Si alguno de estos identificadores no puede resolverse, el proceso lanza un error y se ejecuta rollback.
+11.4 its_messages
+Representa los mensajes ITS identificados dentro de los paquetes.
+Se carga desde:
+its_messages.ndjson
+Campos insertados:
+packet_idsession_idmessage_typestation_idgeneration_timeprotocol_versionpayload_jsonhas_pki
+El campo payload_json se inserta como jsonb.
+Cada mensaje ITS se vincula con:
+un paquete; 
+una sesión; 
+opcionalmente, información de PKI; 
+opcionalmente, una tabla específica según el tipo de mensaje. 
+11.5 secured_packets
+Representa información de seguridad asociada a mensajes ITS firmados.
+Se carga desde:
+secured_packets.ndjson
+Campos principales:
+its_message_idsecured_protocol_versioncontent_typehash_idsigner_typegeneration_timegen_latitudegen_longitudegen_elevationcert_versioncert_typeissuer_digestcert_valid_fromcert_valid_duration_hoursverification_key_typeverification_keysignature_typecertificate_jsonsecured_packet_json
+Los campos certificate_json y secured_packet_json se insertan como jsonb.
+Las coordenadas gen_latitude y gen_longitude se transforman antes de la inserción, dividiendo su valor entre 1e7.
+11.6 secured_packet_permissions
+Representa los permisos asociados a un paquete seguro, normalmente vinculados a PSID y SSP.
+Se carga desde:
+secured_packet_permissions.ndjson
+Campos insertados:
+secured_packet_idpsidssp
+Antes de insertar cada permiso, el sistema resuelve el secured_packet_id local contra el ID real generado en la tabla secured_packets.
+11.7 cam_messages_basic_vehicle
+Representa información específica de mensajes CAM de vehículo básico.
+Se carga desde:
+cam_messages_basic_vehicle.ndjson
+El identificador de esta tabla es el mismo que el identificador real del mensaje en its_messages.
+Campos principales:
+idstation_typelatitudelongitudealtitudealtitude_confidenceheadingheading_confidencespeedspeed_confidenceyaw_rateyaw_rate_confidencedrive_directionlongitudinal_accelerationlongitudinal_acceleration_confidencecurvaturecurvature_confidencecurvature_calculation_modevehicle_lengthvehicle_length_confidencevehicle_widthsemi_major_confidencesemi_minor_confidencesemi_major_orientationbasic_containerhigh_freq_containerlow_freq_containerpath_history
+Los campos basic_container, high_freq_container, low_freq_container y path_history se insertan como jsonb.
+Las coordenadas latitude y longitude se transforman dividiendo entre 1e7.
+11.8 denm_messages
+Representa información específica de mensajes DENM.
+Se carga desde:
+denm_messages.ndjson
+El identificador de esta tabla corresponde al ID real del mensaje en its_messages.
+Campos principales:
+idstation_typeoriginating_station_idsequence_numberdetection_timereference_timevalidity_durationtransmission_intervalinformation_qualityevent_typeevent_latitudeevent_longitudeevent_altitudeevent_altitude_confidenceevent_semi_major_confidenceevent_semi_minor_confidenceevent_semi_major_orientationawareness_distanceawareness_traffic_directionmanagement_jsonsituation_jsonlocation_jsonalacarte_json
+Los campos JSON se insertan como jsonb.
+Las coordenadas event_latitude y event_longitude se transforman dividiendo entre 1e7.
+11.9 cpm_messages
+Representa información específica de mensajes CPM.
+Se carga desde:
+cpm_messages.ndjson
+Campos principales:
+idlatitudelongitudealtitudealtitude_confidencesemi_major_confidencesemi_minor_confidencesemi_major_orientationcontainer_idreference_timesensor_idsensor_typenumber_of_sensorssensor_informationperception_regionnumber_of_objectsobjects
+Los campos sensor_information, perception_region y objects se insertan como jsonb.
+Las coordenadas latitude y longitude se transforman dividiendo entre 1e7.
+11.10 spatem_messages
+Representa información específica de mensajes SPATEM.
+Se carga desde:
+spatem_messages.ndjson
+Campos insertados:
+idintersection_idsignal_groupsphasestime_to_change
+Los campos signal_groups y phases se insertan como jsonb.
+11.11 mapem_messages
+Representa información específica de mensajes MAPEM.
+Se carga desde:
+mapem_messages.ndjson
+Campos insertados:
+idmap_areaslane_widthnumber_of_lanesintersections
+Los campos map_areas e intersections se insertan como jsonb.
+11.12 ivi_messages
+Representa información específica de mensajes IVI.
+Se carga desde:
+ivi_messages.ndjson
+Campos insertados:
+idivi_contentsign_typesign_valuelane_applicability
+Los campos ivi_content y lane_applicability se insertan como jsonb.
+12. Gestión de identificadores
+Los ficheros NDJSON generados por pcap2db contienen identificadores locales.
+Estos identificadores son válidos dentro de la sesión, pero no coinciden necesariamente con los identificadores reales generados por PostgreSQL.
+Por ello, ndjson2pg mantiene un contexto interno de ingesta mediante la clase IngestionContext.
+Este contexto contiene los siguientes mapas:
+session_id_mapdevice_id_mappacket_id_mapits_message_id_mapsecured_packet_id_map
+Cada mapa relaciona:
+ID local del NDJSON → ID real de PostgreSQL
+Ejemplo:
+ctx.session_id_map[1] = 37ctx.device_id_map[1] = 12ctx.packet_id_map[1] = 845ctx.its_message_id_map[1] = 845
+Esto permite mantener la integridad relacional entre tablas.
+13. Gestión de dispositivos duplicados
+La tabla devices tiene una lógica especial, ya que los dispositivos pueden aparecer en varias sesiones.
+Para evitar duplicidades, antes de insertar un nuevo dispositivo se realizan las siguientes comprobaciones:
+Si el dispositivo tiene mac_address, se busca un dispositivo existente con la misma MAC. 
+Si no se encuentra por MAC y existe ip_address, se busca un dispositivo existente con la misma IP. 
+Si se encuentra un dispositivo existente, se reutiliza su ID. 
+Si no se encuentra, se inserta como nuevo dispositivo. 
+Esta lógica permite que distintas sesiones puedan reutilizar el mismo dispositivo físico sin duplicarlo en la base de datos.
+El vínculo entre dispositivo y sesión no se almacena directamente en devices, sino a través de la tabla packets, que contiene session_id y device_id.
+14. Tratamiento de coordenadas y campos JSON
+14.1 Coordenadas
+Algunas coordenadas llegan en los NDJSON en formato entero escalado.
+Para almacenarlas en la base de datos en formato decimal, el sistema aplica la función scale_coord.
+La transformación consiste en dividir el valor entre 1e7.
+Ejemplo:
+431234567 → 43.1234567
+Esta transformación se aplica en campos como:
+latitudelongitudeevent_latitudeevent_longitudegen_latitudegen_longitude
+Si el valor es None, se conserva como None.
+Si el valor no puede convertirse a número, se devuelve sin modificar.
+14.2 Campos JSON
+Los campos complejos se serializan mediante json.dumps y se insertan en PostgreSQL como jsonb.
+Ejemplos de campos JSON:
+payload_jsoncertificate_jsonsecured_packet_jsonbasic_containerhigh_freq_containerlow_freq_containerpath_historymanagement_jsonsituation_jsonlocation_jsonalacarte_jsonsensor_informationperception_regionobjectssignal_groupsphasesmap_areasintersectionsivi_contentlane_applicability
+15. Gestión de errores y transacciones
+El proceso completo se ejecuta dentro de una única transacción de base de datos.
+La conexión se abre con:
+autocommit=False
+Si todas las cargas finalizan correctamente, se ejecuta:
+conn.commit()
+Y se muestra el mensaje:
+Carga completada correctamente.
+Si se produce cualquier excepción, se ejecuta:
+conn.rollback()
+Y se muestra un mensaje de error:
+ERROR: rollback ejecutado. Detalle: <detalle del error>
+Esto evita cargas parciales y garantiza que la base de datos no quede en un estado inconsistente.
+15.1 Errores controlados
+El sistema puede detenerse en los siguientes casos:
+falta una variable de entorno obligatoria; 
+no existe la carpeta de sesión; 
+la ruta indicada no es una carpeta; 
+faltan ficheros NDJSON base; 
+un fichero NDJSON contiene una línea JSON inválida; 
+un identificador local no puede resolverse; 
+PostgreSQL no devuelve un ID tras una inserción; 
+existe un error de conexión a base de datos; 
+existe un error de constraint, tipo de dato o schema en PostgreSQL.
+16. Evidencias de funcionamiento
+Para demostrar que el flujo funciona correctamente, se propone añadir un apartado de evidencias de ejecución.
+Estas evidencias pueden dividirse en tres bloques:
+1. Evidencias de entrada2. Evidencias de ejecución3. Evidencias de resultado en base de datos
+16.1 Evidencias de entrada
+Se recomienda guardar una captura o listado de la carpeta de sesión antes de la ingesta.
+Ejemplo:
+Carpeta de sesión:out/kapsch/sessions/20250619T130600Z_kapsch_rsu_10340552/Ficheros detectados:- test_sessions.ndjson- devices.ndjson- packets.ndjson- its_messages.ndjson- secured_packets.ndjson- cam_messages_basic_vehicle.ndjson- cpm_messages.ndjson
+También se puede documentar el número de líneas de cada fichero NDJSON.
+Ejemplo:
+Fichero
+Nº líneas
+Estado
+test_sessions.ndjson
+2
+OK
+devices.ndjson
+1
+OK
+packets.ndjson
+1500
+OK
+its_messages.ndjson
+1500
+OK
+cam_messages_basic_vehicle.ndjson
+1200
+OK
+cpm_messages.ndjson
+300
+OK
+16.2 Evidencias de ejecución
+Se recomienda guardar el comando ejecutado y la salida de consola.
+Ejemplo de comando:
+python ndjson2pg.py --session-dir out/kapsch/sessions/20250619T130600Z_kapsch_rsu_10340552 --schema public
+Ejemplo de salida esperada:
+Sesión: out/kapsch/sessions/20250619T130600Z_kapsch_rsu_10340552  OK  test_sessions.ndjson  OK  devices.ndjson  OK  packets.ndjson  OK  its_messages.ndjson  OK  secured_packets.ndjson  --  secured_packet_permissions.ndjson  OK  cam_messages_basic_vehicle.ndjson  --  denm_messages.ndjson  OK  cpm_messages.ndjson  --  spatem_messages.ndjson  --  mapem_messages.ndjson  --  ivi_messages.ndjsontest_sessions insertadas: 2devices reutilizados: 0devices insertados: 1packets insertados: 1500its_messages insertados: 1500secured_packets insertados: 1500secured_packet_permissions insertados: 0cam_messages_basic_vehicle insertados: 1200denm_messages insertados: 0cpm_messages insertados: 300spatem_messages insertados: 0mapem_messages insertados: 0ivi_messages insertados: 0Carga completada correctamente.
+16.3 Evidencias en base de datos
+Después de la ingesta, se recomienda ejecutar consultas SQL de comprobación.
+Ejemplos:
+SELECT COUNT(*) FROM test_sessions;SELECT COUNT(*) FROM devices;SELECT COUNT(*) FROM packets;SELECT COUNT(*) FROM its_messages;SELECT COUNT(*) FROM secured_packets;SELECT COUNT(*) FROM cam_messages_basic_vehicle;SELECT COUNT(*) FROM denm_messages;SELECT COUNT(*) FROM cpm_messages;SELECT COUNT(*) FROM spatem_messages;SELECT COUNT(*) FROM mapem_messages;SELECT COUNT(*) FROM ivi_messages;
+También se pueden comprobar relaciones entre tablas:
+SELECT COUNT(*)FROM packets pLEFT JOIN test_sessions ts ON p.session_id = ts.idWHERE ts.id IS NULL;
+El resultado esperado es:
+0
+Consulta para comprobar paquetes sin dispositivo asociado:
+SELECT COUNT(*)FROM packets pLEFT JOIN devices d ON p.device_id = d.idWHERE d.id IS NULL;
+Resultado esperado:
+0
+Consulta para comprobar mensajes ITS sin paquete asociado:
+SELECT COUNT(*)FROM its_messages imLEFT JOIN packets p ON im.packet_id = p.idWHERE p.id IS NULL;
+Resultado esperado:
+0
+Consulta para comprobar mensajes CAM sin mensaje ITS asociado:
+SELECT COUNT(*)FROM cam_messages_basic_vehicle camLEFT JOIN its_messages im ON cam.id = im.idWHERE im.id IS NULL;
+Resultado esperado:
+0
+16.4 Comparativa NDJSON vs BBDD
+Se recomienda documentar una tabla comparativa entre líneas de entrada e inserciones realizadas.
+Tabla
+Líneas NDJSON
+Registros insertados
+Estado
+test_sessions
+2
+2
+OK
+devices
+1
+1
+OK
+packets
+1500
+1500
+OK
+its_messages
+1500
+1500
+OK
+secured_packets
+1500
+1500
+OK
+cam_messages_basic_vehicle
+1200
+1200
+OK
+cpm_messages
+300
+300
+OK
+En el caso de devices, hay que tener en cuenta que algunos dispositivos pueden reutilizarse y no insertarse de nuevo. Por ello, el número de líneas NDJSON no siempre tiene que coincidir con el número de dispositivos insertados.
+17. Integración con Minerva
+La ejecución automática del flujo se realiza en Minerva, herramienta de flujo de datos.
+La documentación específica de Minerva debe recoger:
+nombre del flujo; 
+parámetros de entrada; 
+ubicación de los NDJSON generados por pcap2db; 
+ejecución del script ndjson2pg.py; 
+conexión utilizada a PostgreSQL; 
+logs de ejecución; 
+histórico de ejecuciones; 
+evidencias de ejecución correcta. 
+En este documento se recomienda incluir una referencia al proceso automatizado, sin duplicar toda la documentación de Minerva.
+Ejemplo:
+Elemento
+Descripción
+Herramienta
+Minerva
+Flujo
+Ingesta NDJSON a PostgreSQL
+Entrada
+Carpeta de sesión generada por pcap2db
+Proceso
+Ejecución de ndjson2pg.py
+Salida
+Tablas PostgreSQL pobladas
+Evidencia
+Captura/log de ejecución correcta
+18. Casos validados
+Se recomienda documentar los casos validados en una tabla.
+Caso
+Entrada
+Resultado esperado
+Estado
+Sesión Kapsch
+NDJSON generados por pcap2db
+Carga completa en PostgreSQL
+Pendiente de evidenciar
+Sesión Cohda RX
+NDJSON generados por pcap2db
+Carga completa en PostgreSQL
+Pendiente de evidenciar
+Sesión Swarco TX
+NDJSON generados por pcap2db
+Carga completa en PostgreSQL
+Pendiente de evidenciar
+Mensajes CAM
+cam_messages_basic_vehicle.ndjson
+Registros en tabla CAM
+Pendiente de evidenciar
+Mensajes DENM
+denm_messages.ndjson
+Registros en tabla DENM
+Pendiente de evidenciar
+Mensajes CPM
+cpm_messages.ndjson
+Registros en tabla CPM
+Pendiente de evidenciar
+Mensajes con PKI
+secured_packets.ndjson
+Registros en tabla de seguridad
+Pendiente de evidenciar
+Ficheros opcionales ausentes
+Sin algunos NDJSON opcionales
+Proceso continúa correctamente
+Pendiente de evidenciar
+Error en NDJSON
+Línea JSON inválida
+Error y rollback
+Pendiente de evidenciar
+ID no resoluble
+FK local inexistente
+Error y rollback
+Pendiente de evidenciar
+19. Limitaciones actuales
+El sistema actual presenta las siguientes limitaciones:
+No crea las tablas de PostgreSQL; asume que el esquema ya existe. 
+No valida el modelo completo de base de datos antes de insertar. 
+No implementa un modo dry-run. 
+No genera un informe automático de carga en formato fichero. 
+No compara automáticamente líneas NDJSON frente a registros insertados. 
+La deduplicación avanzada solo se aplica en devices. 
+No se gestiona de forma específica la reingesta completa de una misma sesión. 
+No existe todavía una batería automatizada de tests unitarios o de integración documentada. 
+La ejecución depende de que las variables de entorno estén correctamente configuradas. 
+Los ficheros opcionales se omiten si no existen o están vacíos, pero no se genera un informe detallado de ausencia de datos.
+20. Próximos pasos (opcionales a futuro)
+Como próximos pasos se propone:
+Añadir validaciones automáticas previas a la ingesta. 
+Crear un modo --dry-run que valide los ficheros sin insertar datos. 
+Generar un informe automático de ejecución con: 
+ficheros detectados; 
+registros leídos; 
+registros insertados; 
+registros reutilizados; 
+errores encontrados. 
+Añadir tests unitarios para: 
+lectura NDJSON; 
+validación de carpeta; 
+mapeo de identificadores; 
+transformación de coordenadas; 
+serialización JSON; 
+deduplicación de dispositivos. 
+Añadir tests de integración con PostgreSQL. 
+Documentar el esquema SQL esperado. 
+Añadir control específico de reingesta de sesiones. 
+Integrar la generación de evidencias dentro del flujo de Minerva. 
+Añadir logs estructurados en lugar de únicamente print. 
+Preparar una documentación conjunta del flujo extremo a extremo: 
+PCAP → pcap2db → NDJSON → ndjson2pg → PostgreSQL → explotación
+Anexo I. Dependencias 
+Como próximos pasos se propone:
+Añadir validaciones automáticas previas a la ingesta. 
+Crear un modo --dry-run que valide los ficheros sin insertar datos. 
+Generar un informe automático de ejecución con: 
+ficheros detectados; 
+registros leídos; 
+registros insertados; 
+registros reutilizados; 
+errores encontrados. 
+Añadir tests unitarios para: 
+lectura NDJSON; 
+validación de carpeta; 
+mapeo de identificadores; 
+transformación de coordenadas; 
+serialización JSON; 
+deduplicación de dispositivos. 
+Añadir tests de integración con PostgreSQL. 
+Documentar el esquema SQL esperado. 
+Añadir control específico de reingesta de sesiones. 
+Integrar la generación de evidencias dentro del flujo de Minerva. 
+Añadir logs estructurados en lugar de únicamente print. 
+Preparar una documentación conjunta del flujo extremo a extremo: 
+PCAP → pcap2db → NDJSON → ndjson2pg → PostgreSQL → explotación
+Anexo II. Ejecución paso a paso
+Paso 1. Instalar dependencias
+pip install -r requirements.txt
+Paso 2. Crear y configurar fichero .env
+POSTGRES_HOST=localhostPOSTGRES_PORT=5432POSTGRES_DB=its_databasePOSTGRES_USER=postgresPOSTGRES_PASSWORD=postgresPOSTGRES_SCHEMA=public
+Paso 3. Verificar carpeta de sesión
+out/kapsch/sessions/20250619T130600Z_kapsch_rsu_10340552/
+Debe contener como mínimo:
+test_sessions.ndjsondevices.ndjsonpackets.ndjsonits_messages.ndjson
+Paso 4. Ejecutar ingesta
+python ndjson2pg.py --session-dir out/kapsch/sessions/20250619T130600Z_kapsch_rsu_10340552
+Paso 5. Revisar salida de consola
+Resultado esperado:
+Carga completada correctamente.
+Paso 6. Validar en PostgreSQL
+SELECT COUNT(*) FROM test_sessions;SELECT COUNT(*) FROM devices;SELECT COUNT(*) FROM packets;SELECT COUNT(*) FROM its_messages;
+Anexo III. Salida esperada por consola 
+Ejemplo orientativo de ejecución correcta:
+Sesión: out/kapsch/sessions/20250619T130600Z_kapsch_rsu_10340552  OK  test_sessions.ndjson  OK  devices.ndjson  OK  packets.ndjson  OK  its_messages.ndjson  OK  secured_packets.ndjson  OK  secured_packet_permissions.ndjson  OK  cam_messages_basic_vehicle.ndjson  --  denm_messages.ndjson  OK  cpm_messages.ndjson  --  spatem_messages.ndjson  --  mapem_messages.ndjson  --  ivi_messages.ndjsontest_sessions insertadas: 2devices reutilizados: 0devices insertados: 1packets insertados: 1500its_messages insertados: 1500secured_packets insertados: 1500secured_packet_permissions insertados: 12cam_messages_basic_vehicle insertados: 1200denm_messages insertados: 0cpm_messages insertados: 300spatem_messages insertados: 0mapem_messages insertados: 0ivi_messages insertados: 0Carga completada correctamente.
+Anexo IV. Salida esperada en caso de error
+Ejemplo de error por fichero obligatorio ausente:
+Faltan ficheros NDJSON base en la sesión: packets.ndjson
+Ejemplo de error por JSON inválido:
+ERROR: rollback ejecutado. Detalle: JSON inválido en its_messages.ndjson, línea 25
+Ejemplo de error por identificador no resuelto:
+ERROR: rollback ejecutado. Detalle: packet_id local no resuelto en its_messages: 150
+En todos los casos, el sistema ejecuta rollback y evita que se consolide una carga parcial.

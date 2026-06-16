@@ -1,0 +1,61 @@
+Despliegue del proyecto pcap2db en servidor Linux
+1. Preparación del entorno de trabajo
+Se definió como directorio base de trabajo:
+/home/basque/pcap2json
+Todas las operaciones de clonado, construcción de la imagen y ejecución del contenedor se realizan desde esta ruta.
+2. Configuración de acceso al repositorio privado mediante SSH
+Dado que el repositorio es privado, se configuró autenticación SSH para permitir el acceso seguro desde el servidor.
+2.1 Generación de clave SSH
+Se generó una clave pública/privada en el servidor mediante:
+ssh-keygen -t ed25519 -C "server_172.16.10.2"
+Esto crea la clave privada en:
+~/.ssh/id_ed25519
+Y la clave pública en:
+~/.ssh/id_ed25519.pub
+2.2 Copia de la clave pública
+Se obtuvo el contenido de la clave pública con:
+cat ~/.ssh/id_ed25519.pub
+El contenido mostrado se copió al portapapeles.
+2.3 Registro de la clave en GitHub
+En GitHub se añadió la clave pública siguiendo la ruta:
+GitHub → Settings → SSH and GPG keys → New SSH key
+Esto permitió autorizar al servidor para acceder al repositorio privado.
+2.4 Clonado del repositorio
+Una vez configurado SSH, se clonó el repositorio mediante:
+git clone git@github.com:acuerui/pcap2db.git
+3. Creación del workspace de entrada y salida
+Se creó la estructura de carpetas necesaria para el funcionamiento del pipeline:
+mkdir -p ./pcap_workspace/pcaps/rawmkdir -p ./pcap_workspace/pcaps/processedmkdir -p ./pcap_workspace/out
+El fichero de entrada .pcap debe ubicarse en:
+/home/basque/pcap2json/pcap_workspace/pcaps/raw
+4. Configuración de Docker
+En el directorio principal /home/basque/pcap2json se colocaron los siguientes archivos:
+Dockerfile
+entrypoint.sh
+Estos permiten construir la imagen del contenedor y definir el punto de entrada del proceso.
+5. Construcción de la imagen Docker
+Para generar la imagen del contenedor se ejecutó:
+docker build -t pcap2db:latest .
+Este comando:
+Instala dependencias
+Copia el código del proyecto
+Instala tshark
+Prepara el entorno de ejecución
+6. Ejecución del contenedor
+El contenedor se ejecuta montando el workspace del servidor como volumen:
+-v /home/basque/pcap2json/pcap_workspace:/workspace
+Esto permite que los ficheros de entrada y salida permanezcan en el sistema del servidor.
+6.1 Ejecución del pipeline completo (Extract + Transform)
+docker run --rm -v /home/basque/pcap2json/pcap_workspace:/workspace pcap2db:latest run --in "tx_r1a 20.pcap" --vendor lacroix
+6.2 Ejecución únicamente del proceso Extract
+docker run --rm -v /home/basque/pcap2json/pcap_workspace:/workspace \pcap2db:latest extract --in "tx_r1a 20.pcap"
+6.3 Ejecución únicamente del proceso Transform
+docker run --rm -v /home/basque/pcap2json/pcap_workspace:/workspace pcap2db:latest transform --vendor lacroix --in "tx_r1a 20.ek.ndjson"
+El parámetro --rm garantiza que el contenedor se elimine automáticamente tras finalizar la ejecución.
+7. Flujo de actualización del proyecto
+Cuando se realizan cambios en el código del repositorio, el procedimiento correcto es:
+git pulldocker build -t pcap2db:latest .docker run ...
+Es decir:
+git pull → docker build → docker run
+Si no hay cambios en el código, no es necesario reconstruir la imagen, y basta con ejecutar directamente:
+docker run ...

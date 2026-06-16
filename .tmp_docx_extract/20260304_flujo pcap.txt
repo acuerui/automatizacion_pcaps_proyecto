@@ -1,0 +1,156 @@
+Automatización del procesamiento de archivos PCAP mediante Docker, NiFi y systemd
+1. Introducción
+El objetivo de este sistema es automatizar el procesamiento de archivos PCAP almacenados inicialmente en HDFS mediante un pipeline basado en:
+Apache NiFi para detectar y transferir los archivos.
+Docker para ejecutar el procesamiento del PCAP mediante el proyecto pcap2db.
+systemd + inotify para detectar automáticamente nuevos archivos en el servidor y lanzar el procesamiento.
+logrotate para gestionar los logs generados por el sistema.
+La arquitectura final permite que cada archivo PCAP sea procesado automáticamente cuando es detectado en el servidor.
+2. Arquitectura del sistema
+El flujo completo del sistema es el siguiente:
+HDFS │NiFi(ListHDFS → FetchHDFS → PutSFTP) │Servidor Linux/home/basque/pcap2json/pcap_workspace/pcaps/raw │Watcher (inotify) │Docker container (pcap2db) │Salida NDJSON
+El proceso funciona de la siguiente forma:
+NiFi detecta nuevos archivos PCAP en HDFS.
+NiFi copia el archivo al servidor mediante SFTP.
+Un watcher en el servidor detecta el archivo nuevo.
+El watcher ejecuta un contenedor Docker que procesa el archivo.
+Tras finalizar el procesamiento, el archivo PCAP se elimina.
+3. Preparación del servidor
+3.1 Directorio de trabajo
+Se creó el directorio base para el proyecto:
+/home/basque/pcap2json
+Dentro de este directorio se almacenan:
+el repositorio del proyecto
+los scripts de automatización
+los logs
+el workspace de procesamiento
+4. Configuración del acceso al repositorio privado
+Para poder clonar el repositorio privado desde GitHub se configuró acceso mediante SSH.
+4.1 Generación de clave SSH
+En el servidor se generó una clave SSH:
+ssh-keygen -t ed25519 -C "server_172.16.10.2"
+4.2 Obtención de la clave pública
+Se copió la clave pública generada:
+cat ~/.ssh/id_ed25519.pub
+4.3 Registro de la clave en GitHub
+La clave pública se añadió en GitHub en:
+GitHub → Settings → SSH and GPG keys → New SSH key
+Esto permite al servidor acceder al repositorio privado.
+4.4 Clonado del repositorio
+Una vez configurado SSH se clonó el repositorio:
+git clone git@github.com:acuerui/pcap2db.git
+5. Creación del workspace de procesamiento
+Se creó la estructura de carpetas necesaria para el procesamiento:
+mkdir -p ./pcap_workspace/pcaps/rawmkdir -p ./pcap_workspace/pcaps/processedmkdir -p ./pcap_workspace/out
+La estructura final es:
+pcap_workspace ├── pcaps │   ├── raw │   └── processed └── out
+Los archivos .pcap se depositan en:
+/home/basque/pcap2json/pcap_workspace/pcaps/raw
+6. Preparación de Docker
+En el directorio del proyecto se añadieron los archivos necesarios para construir el contenedor:
+Dockerfile
+entrypoint.sh
+Posteriormente se construyó la imagen Docker:
+docker build -t pcap2db:latest .
+7. Ejecución manual del contenedor
+Para procesar un archivo manualmente se utiliza el siguiente comando:
+docker run --rm \-v /home/basque/pcap2json/pcap_workspace:/workspace \pcap2db:latest \run --in "tx_r1a 20.pcap" --vendor lacroix
+Opcionalmente también se pueden ejecutar pasos individuales:
+Extract
+docker run --rm \-v /home/basque/pcap2json/pcap_workspace:/workspace \pcap2db:latest \extract --in "tx_r1a 20.pcap"
+Transform
+docker run --rm \-v /home/basque/pcap2json/pcap_workspace:/workspace \pcap2db:latest \transform --vendor lacroix --in "tx_r1a 20.ek.ndjson"
+8. Automatización mediante watcher
+Para detectar automáticamente nuevos archivos se creó un script watcher basado en inotify.
+Archivo:
+/home/basque/pcap2json/process_pcap.sh
+Este script:
+escucha eventos CREATE
+ignora archivos temporales
+filtra archivos .pcap
+ejecuta el contenedor Docker
+elimina el archivo tras procesarlo
+genera logs del proceso
+9. Ejecución automática mediante systemd
+Para que el watcher se ejecute permanentemente se creó un servicio systemd.
+Archivo:
+/etc/systemd/system/pcap-watcher.service
+Contenido:
+[Unit]Description=PCAP Docker Processing WatcherAfter=network.target docker.serviceRequires=docker.service[Service]Type=simpleUser=basqueWorkingDirectory=/home/basque/pcap2jsonExecStart=/usr/bin/bash /home/basque/pcap2json/process_pcap.shRestart=alwaysRestartSec=5[Install]WantedBy=multi-user.target
+9.1 Activación del servicio
+Se recargó systemd:
+sudo systemctl daemon-reload
+Se habilitó el servicio para que arranque con el sistema:
+sudo systemctl enable pcap-watcher
+Se inició el servicio:
+sudo systemctl start pcap-watcher
+9.2 Verificación del estado
+systemctl status pcap-watcher
+10. Monitorización del sistema
+Los logs del watcher se almacenan en:
+/home/basque/pcap2json/logs/pcap_watcher.log
+Para ver los logs en tiempo real se utiliza:
+tail -f /home/basque/pcap2json/logs/pcap_watcher.log
+11. Rotación de logs
+Para evitar que el archivo de log crezca indefinidamente se configuró logrotate.
+Archivo de configuración:
+/etc/logrotate.d/pcap-watcher
+Contenido:
+/home/basque/pcap2json/logs/pcap_watcher.log {    daily    rotate 7    compress    missingok    notifempty    copytruncate
+    delaycompress
+    dateext}
+Esto provoca que:
+El archivo de log se rota diariamente.
+Se mantienen los últimos siete archivos de log históricos.
+Los archivos rotados se comprimen automáticamente para reducir el espacio ocupado.
+La compresión se realiza con un pequeño retraso para evitar conflictos con procesos que aún puedan estar escribiendo en el log.
+Si el archivo de log no existe, el proceso de rotación no genera errores.
+Los archivos de log vacíos no se rotan innecesariamente.
+La opción copytruncate permite rotar el archivo, aunque el servicio watcher continúe escribiendo en él.
+La opción dateext añade la fecha al nombre de los archivos rotados, facilitando su identificación.
+12. Ingestión de archivos JSON mediante Apache NiFi
+Una vez generado el archivo NDJSON en /home/basque/pcap2json/pcap_workspace/pcaps/processed/, Apache NiFi se encarga de su ingestión en el Data Lake corporativo.
+Para ello se utiliza un flujo basado en el patrón recomendado:
+ListSFTP → FetchSFTP → PutHDFS
+12.1 ListSFTP – Detección controlada de archivos JSON
+El procesador ListSFTP se encarga de listar los archivos disponibles en el directorio remoto:
+/home/basque/pcap2json/pcap_workspace/pcaps/processed/, 
+Características clave:
+No descarga contenido, solo metadatos.
+Mantiene estado interno.
+Cada archivo se lista una única vez.
+Evita duplicidades incluso con múltiples ejecuciones.
+12.2 FetchSFTP – Descarga del contenido JSON
+El procesador FetchSFTP descarga el contenido de los archivos listados previamente.
+Cada archivo JSON genera un único FlowFile, asegurando que:
+No se producen descargas duplicadas.
+El contenido se transfiere de forma segura.
+Se mantiene la coherencia del flujo.
+12.3 PutHDFS – Almacenamiento en el Data Lake
+El procesador PutHDFS almacena los archivos JSON en el Data Lake corporativo.
+Ruta destino en HDFS:
+user/Pcap2Json/NDJSON
+Los archivos se almacenan conservando su nombre original, permitiendo:
+Identificación directa del origen.
+Reutilización posterior.
+Trazabilidad completa.
+12.4 Eliminación de archivos JSON del servidor remoto
+Una vez que el archivo JSON ha sido transferido correctamente a HDFS, el flujo de NiFi elimina el archivo del servidor remoto.
+Esta eliminación se realiza únicamente tras confirmarse la correcta ingestión, evitando pérdida de datos.
+12.5 Gestión de concurrencia y duplicidades
+El sistema ha sido diseñado para soportar escenarios en los que:
+Se generan múltiples archivos MF4 consecutivos.
+Se escriben varios archivos JSON en un corto intervalo de tiempo.
+NiFi realiza polling periódico del servidor remoto.
+Las medidas adoptadas incluyen:
+Uso de ListSFTP para control de estado.
+Escritura atómica de archivos JSON.
+Filtrado de archivos temporales.
+Eliminación controlada tras ingestión.
+13. Qué hacer después de cambiar process_pcap.sh
+1. Recargar systemd (es importante). Esto vuelve a leer los servicios y scripts asociados:
+sudo systemctl daemon-reload
+2. Reiniciar el servicio
+sudo systemctl restart pcap-watcher
+3. Verificar que está corriendo bien
+sudo systemctl status pcap-watcher
